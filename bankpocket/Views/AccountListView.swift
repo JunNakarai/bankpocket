@@ -10,7 +10,7 @@ import SwiftData
 
 struct AccountListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var accounts: [BankAccount]
+    @Query(sort: \BankAccount.sortOrder, order: .forward) private var accounts: [BankAccount]
     @Query private var tags: [Tag]
 
     @Binding var showingAddAccount: Bool
@@ -142,6 +142,7 @@ struct AccountListView: View {
                     }
                 }
             }
+            .onMove(perform: moveAccounts)
         }
         .listStyle(PlainListStyle())
     }
@@ -190,8 +191,13 @@ struct AccountListView: View {
             }
         }
 
-        // Sort by bank name
-        return filtered.sorted { $0.bankName < $1.bankName }
+        // Sort by sortOrder, then by bank name for items with same order
+        return filtered.sorted {
+            if $0.sortOrder == $1.sortOrder {
+                return $0.bankName < $1.bankName
+            }
+            return $0.sortOrder < $1.sortOrder
+        }
     }
 
     // MARK: - Actions
@@ -227,6 +233,28 @@ struct AccountListView: View {
             showingImportResult = true
         } catch {
             errorMessage = "インポートに失敗しました: \(error.localizedDescription)"
+            showingError = true
+        }
+    }
+
+    // MARK: - Reorder Actions
+
+    private func moveAccounts(from source: IndexSet, to destination: Int) {
+        // Only allow reordering when no filters are applied
+        guard searchText.isEmpty && selectedTag == nil else { return }
+
+        var reorderedAccounts = filteredAccounts
+        reorderedAccounts.move(fromOffsets: source, toOffset: destination)
+
+        // Update sort order for all affected accounts
+        for (index, account) in reorderedAccounts.enumerated() {
+            account.sortOrder = index
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            errorMessage = "順序の保存に失敗しました: \(error.localizedDescription)"
             showingError = true
         }
     }

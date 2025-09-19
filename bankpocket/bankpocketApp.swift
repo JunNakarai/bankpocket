@@ -20,7 +20,33 @@ struct BankPocketApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // If model creation fails due to schema changes, try to delete and recreate
+            print("ModelContainer creation failed, attempting to reset: \(error)")
+
+            // Delete existing database files from all possible locations
+            let fileManager = FileManager.default
+
+            // Documents directory
+            if let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first {
+                let dbURL = documentsPath.appendingPathComponent("default.store")
+                try? fileManager.removeItem(at: dbURL)
+                try? fileManager.removeItem(at: dbURL.appendingPathExtension("wal"))
+                try? fileManager.removeItem(at: dbURL.appendingPathExtension("shm"))
+            }
+
+            // Application Support directory
+            if let appSupportPath = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
+                let dbURL = appSupportPath.appendingPathComponent("default.store")
+                try? fileManager.removeItem(at: dbURL)
+                try? fileManager.removeItem(at: dbURL.appendingPathExtension("wal"))
+                try? fileManager.removeItem(at: dbURL.appendingPathExtension("shm"))
+            }
+
+            do {
+                return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer after reset: \(error)")
+            }
         }
     }()
 
@@ -63,6 +89,33 @@ struct BankPocketApp: App {
             try context.save()
         } catch {
             print("Failed to create default tags: \(error)")
+        }
+
+        // Initialize sortOrder for existing accounts if needed
+        await initializeSortOrderForExistingAccounts()
+    }
+
+    @MainActor
+    private func initializeSortOrderForExistingAccounts() async {
+        let context = sharedModelContainer.mainContext
+        let descriptor = FetchDescriptor<BankAccount>()
+
+        do {
+            let accounts = try context.fetch(descriptor)
+            var needsUpdate = false
+
+            for (index, account) in accounts.enumerated() {
+                if account.sortOrder == 0 && index > 0 {
+                    account.sortOrder = index
+                    needsUpdate = true
+                }
+            }
+
+            if needsUpdate {
+                try context.save()
+            }
+        } catch {
+            print("Failed to initialize sort order: \(error)")
         }
     }
 }

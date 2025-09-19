@@ -109,12 +109,17 @@ class CSVService {
                     continue
                 }
 
+                // Get next sort order
+                let allAccounts = try modelContext.fetch(FetchDescriptor<BankAccount>())
+                let maxOrder = allAccounts.map(\.sortOrder).max() ?? -1
+
                 // Create account
                 let account = BankAccount(
                     bankName: bankName,
                     branchName: branchName,
                     branchNumber: branchNumber,
-                    accountNumber: accountNumber
+                    accountNumber: accountNumber,
+                    sortOrder: maxOrder + successCount + 1
                 )
 
                 // Add tags

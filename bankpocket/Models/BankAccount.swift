@@ -17,6 +17,7 @@ final class BankAccount {
     var accountNumber: String
     var createdAt: Date
     var updatedAt: Date
+    var sortOrder: Int
 
     var tags: [Tag]
 
@@ -24,7 +25,8 @@ final class BankAccount {
         bankName: String,
         branchName: String,
         branchNumber: String,
-        accountNumber: String
+        accountNumber: String,
+        sortOrder: Int = 0
     ) {
         self.id = UUID()
         self.bankName = bankName
@@ -33,6 +35,7 @@ final class BankAccount {
         self.accountNumber = accountNumber
         self.createdAt = Date()
         self.updatedAt = Date()
+        self.sortOrder = sortOrder
         self.tags = []
     }
 

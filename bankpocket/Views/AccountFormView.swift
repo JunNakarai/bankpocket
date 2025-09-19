@@ -185,12 +185,16 @@ struct AccountFormView: View {
                 account.tags.removeAll()
                 account.tags.append(contentsOf: Array(selectedTags))
             } else {
+                // Get next sort order
+                let maxOrder = existingAccounts.map(\.sortOrder).max() ?? -1
+
                 // Create new account
                 let newAccount = BankAccount(
                     bankName: trimmedBankName,
                     branchName: branchName.trimmingCharacters(in: .whitespacesAndNewlines),
                     branchNumber: trimmedBranchNumber,
-                    accountNumber: trimmedAccountNumber
+                    accountNumber: trimmedAccountNumber,
+                    sortOrder: maxOrder + 1
                 )
 
                 newAccount.tags.append(contentsOf: Array(selectedTags))
