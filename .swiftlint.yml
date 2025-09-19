@@ -1,0 +1,89 @@
+# SwiftLint Configuration for BankPocket
+
+# Paths to include during linting
+included:
+  - ios/BankPocket
+  - ios/BankPocketTests
+
+# Paths to ignore during linting
+excluded:
+  - ios/BankPocket/Resources/*.xcdatamodeld
+  - Carthage
+  - Pods
+  - .build
+
+# Configurable rules can be customized from this configuration file
+# Binary rules can set their severity level
+force_cast: warning
+force_try: warning
+line_length: 120
+type_body_length: 300
+file_length: 500
+
+# Rules to disable
+disabled_rules:
+  - trailing_whitespace
+
+# Rules to enable
+opt_in_rules:
+  - empty_count
+  - closure_spacing
+  - contains_over_first_not_nil
+  - explicit_init
+  - first_where
+  - identical_operands
+  - joined_default_parameter
+  - literal_expression_end_indentation
+  - modifier_order
+  - nimble_operator
+  - number_separator
+  - object_literal
+  - operator_usage_whitespace
+  - private_action
+  - private_outlet
+  - prohibited_super_call
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unavailable_function
+  - unneeded_parentheses_in_closure_argument
+  - vertical_parameter_alignment_on_call
+
+# Custom rule configurations
+identifier_name:
+  min_length: 1
+  max_length: 40
+  excluded:
+    - id
+    - url
+    - ui
+
+line_length:
+  warning: 120
+  error: 150
+  ignores_function_declarations: true
+  ignores_comments: true
+  ignores_urls: true
+
+type_name:
+  min_length: 3
+  max_length: 40
+
+function_body_length:
+  warning: 60
+  error: 100
+
+cyclomatic_complexity:
+  warning: 10
+  error: 20
+
+nesting:
+  type_level:
+    warning: 2
+    error: 3
+  statement_level:
+    warning: 5
+    error: 10
+
+# Reporter type (xcode, json, csv, checkstyle, junit, html, emoji, sonarqube, markdown, github-actions-logging)
+reporter: "xcode"
