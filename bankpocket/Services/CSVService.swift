@@ -128,7 +128,7 @@ class CSVService {
                     for tagName in tagList {
                         let trimmedName = tagName.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !trimmedName.isEmpty, let tag = tagDict[trimmedName] {
-                            account.addTag(tag)
+                            account.addTag(tag, in: modelContext)
                         }
                     }
                 }

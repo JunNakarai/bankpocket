@@ -19,7 +19,7 @@ final class BankAccount {
     var updatedAt: Date
     var sortOrder: Int
 
-    var tags: [Tag]
+    var tagAssignments: [AccountTagAssignment]
 
     init(
         bankName: String,
@@ -36,7 +36,7 @@ final class BankAccount {
         self.createdAt = Date()
         self.updatedAt = Date()
         self.sortOrder = sortOrder
-        self.tags = []
+        self.tagAssignments = []
     }
 
     // MARK: - Computed Properties
@@ -47,6 +47,10 @@ final class BankAccount {
 
     var fullDisplayName: String {
         return "\(bankName) \(branchName) (\(branchNumber))"
+    }
+
+    var tags: [Tag] {
+        tagAssignments.map(\.tag)
     }
 
     // MARK: - Update Method
@@ -66,14 +70,37 @@ final class BankAccount {
 
     // MARK: - Tag Management
 
-    func addTag(_ tag: Tag) {
-        if !tags.contains(tag) {
-            tags.append(tag)
-        }
+    func addTag(_ tag: Tag, in context: ModelContext) {
+        guard !tagAssignments.contains(where: { $0.tag.id == tag.id }) else { return }
+        let assignment = AccountTagAssignment(account: self, tag: tag)
+        context.insert(assignment)
     }
 
-    func removeTag(_ tag: Tag) {
-        tags.removeAll { $0.id == tag.id }
+    func removeTag(_ tag: Tag, in context: ModelContext) {
+        let assignmentsToRemove = tagAssignments.filter { $0.tag.id == tag.id }
+        for assignment in assignmentsToRemove {
+            assignment.tag.tagAssignments.removeAll { $0.id == assignment.id }
+            context.delete(assignment)
+        }
+        tagAssignments.removeAll { $0.tag.id == tag.id }
+    }
+
+    func updateTags(_ newTags: [Tag], in context: ModelContext) {
+        let desiredTagIDs = Set(newTags.map(\.id))
+
+        let assignmentsToRemove = tagAssignments.filter { !desiredTagIDs.contains($0.tag.id) }
+        for assignment in assignmentsToRemove {
+            assignment.tag.tagAssignments.removeAll { $0.id == assignment.id }
+            context.delete(assignment)
+        }
+        tagAssignments.removeAll { assignment in
+            !desiredTagIDs.contains(assignment.tag.id)
+        }
+
+        for tag in newTags where !tagAssignments.contains(where: { $0.tag.id == tag.id }) {
+            let assignment = AccountTagAssignment(account: self, tag: tag)
+            context.insert(assignment)
+        }
     }
 
     // MARK: - Validation

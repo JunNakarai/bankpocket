@@ -17,7 +17,7 @@ final class Tag {
     var createdAt: Date
     var updatedAt: Date
 
-    var accounts: [BankAccount]
+    var tagAssignments: [AccountTagAssignment]
 
     init(name: String, color: String) {
         self.id = UUID()
@@ -25,7 +25,7 @@ final class Tag {
         self.color = color
         self.createdAt = Date()
         self.updatedAt = Date()
-        self.accounts = []
+        self.tagAssignments = []
     }
 
     // MARK: - Computed Properties
@@ -34,12 +34,16 @@ final class Tag {
         return Color(hex: color) ?? .blue
     }
 
+    var accounts: [BankAccount] {
+        tagAssignments.map(\.account)
+    }
+
     var accountCount: Int {
-        return accounts.count
+        return tagAssignments.count
     }
 
     var isUsed: Bool {
-        return !accounts.isEmpty
+        return !tagAssignments.isEmpty
     }
 
     // MARK: - Update Method

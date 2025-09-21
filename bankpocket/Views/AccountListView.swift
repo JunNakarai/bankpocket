@@ -355,5 +355,5 @@ struct FilterButtonStyle: ButtonStyle {
         showingAddAccount: .constant(false),
         showingImportExport: .constant(false)
     )
-    .modelContainer(for: [BankAccount.self, Tag.self], inMemory: true)
+.modelContainer(for: [BankAccount.self, Tag.self, AccountTagAssignment.self], inMemory: true)
 }

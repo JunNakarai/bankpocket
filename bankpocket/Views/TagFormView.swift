@@ -177,5 +177,5 @@ struct TagFormView: View {
 
 #Preview {
     TagFormView(tag: nil)
-        .modelContainer(for: [BankAccount.self, Tag.self], inMemory: true)
+        .modelContainer(for: [BankAccount.self, Tag.self, AccountTagAssignment.self], inMemory: true)
 }

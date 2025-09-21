@@ -18,6 +18,7 @@ struct PreviewHelper {
         let schema = Schema([
             BankAccount.self,
             Tag.self,
+            AccountTagAssignment.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
 
@@ -53,7 +54,6 @@ struct PreviewHelper {
             branchNumber: "123",
             accountNumber: "1234567"
         )
-        account1.tags.append(contentsOf: [personalTag, familyTag])
 
         let account2 = BankAccount(
             bankName: "三菱UFJ銀行",
@@ -61,7 +61,6 @@ struct PreviewHelper {
             branchNumber: "456",
             accountNumber: "9876543"
         )
-        account2.tags.append(workTag)
 
         let account3 = BankAccount(
             bankName: "三井住友銀行",
@@ -69,11 +68,14 @@ struct PreviewHelper {
             branchNumber: "789",
             accountNumber: "5555555"
         )
-        account3.tags.append(contentsOf: [savingsTag, personalTag])
 
         context.insert(account1)
         context.insert(account2)
         context.insert(account3)
+
+        account1.updateTags([personalTag, familyTag], in: context)
+        account2.updateTags([workTag], in: context)
+        account3.updateTags([savingsTag, personalTag], in: context)
 
         try? context.save()
     }

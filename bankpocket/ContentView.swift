@@ -85,5 +85,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [BankAccount.self, Tag.self], inMemory: true)
+        .modelContainer(for: [BankAccount.self, Tag.self, AccountTagAssignment.self], inMemory: true)
 }

@@ -182,8 +182,7 @@ struct AccountFormView: View {
                 )
 
                 // Update tags
-                account.tags.removeAll()
-                account.tags.append(contentsOf: Array(selectedTags))
+                account.updateTags(Array(selectedTags), in: modelContext)
             } else {
                 // Get next sort order
                 let maxOrder = existingAccounts.map(\.sortOrder).max() ?? -1
@@ -197,8 +196,8 @@ struct AccountFormView: View {
                     sortOrder: maxOrder + 1
                 )
 
-                newAccount.tags.append(contentsOf: Array(selectedTags))
                 modelContext.insert(newAccount)
+                newAccount.updateTags(Array(selectedTags), in: modelContext)
             }
 
             try modelContext.save()
@@ -216,5 +215,5 @@ struct AccountFormView: View {
 
 #Preview {
     AccountFormView(account: nil)
-        .modelContainer(for: [BankAccount.self, Tag.self], inMemory: true)
+        .modelContainer(for: [BankAccount.self, Tag.self, AccountTagAssignment.self], inMemory: true)
 }
