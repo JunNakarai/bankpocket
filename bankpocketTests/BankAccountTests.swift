@@ -213,7 +213,7 @@ final class BankAccountTests: XCTestCase {
 
     func testValidationPerformance() {
         measure {
-            for _ in 0..<1000 {
+            for _ in 0..<1_000 {
                 try? BankAccount.validate(
                     bankName: "みずほ銀行"
                 )

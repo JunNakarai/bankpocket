@@ -10,9 +10,9 @@ import SwiftUI
 import SwiftData
 @testable import bankpocket
 
-final class TagTests: XCTestCase {
+// MARK: - Validation
 
-    // MARK: - Validation Tests
+final class TagValidationTests: XCTestCase {
 
     func testValidTagValidation() {
         XCTAssertNoThrow(try Tag.validate(
@@ -22,7 +22,6 @@ final class TagTests: XCTestCase {
     }
 
     func testNameValidation() {
-        // Empty name
         XCTAssertThrowsError(try Tag.validate(
             name: "",
             color: "#FF6B6B"
@@ -30,7 +29,6 @@ final class TagTests: XCTestCase {
             XCTAssertEqual(error as? ValidationError, .tagNameRequired)
         }
 
-        // Too long name
         let longName = String(repeating: "a", count: 31)
         XCTAssertThrowsError(try Tag.validate(
             name: longName,
@@ -41,7 +39,6 @@ final class TagTests: XCTestCase {
     }
 
     func testColorValidation() {
-        // Invalid format - missing #
         XCTAssertThrowsError(try Tag.validate(
             name: "私",
             color: "FF6B6B"
@@ -49,7 +46,6 @@ final class TagTests: XCTestCase {
             XCTAssertEqual(error as? ValidationError, .tagColorInvalidFormat)
         }
 
-        // Invalid format - too short
         XCTAssertThrowsError(try Tag.validate(
             name: "私",
             color: "#FF6B6"
@@ -57,7 +53,6 @@ final class TagTests: XCTestCase {
             XCTAssertEqual(error as? ValidationError, .tagColorInvalidFormat)
         }
 
-        // Invalid format - too long
         XCTAssertThrowsError(try Tag.validate(
             name: "私",
             color: "#FF6B6BB"
@@ -65,7 +60,6 @@ final class TagTests: XCTestCase {
             XCTAssertEqual(error as? ValidationError, .tagColorInvalidFormat)
         }
 
-        // Invalid format - invalid hex characters
         XCTAssertThrowsError(try Tag.validate(
             name: "私",
             color: "#GG6B6B"
@@ -74,70 +68,111 @@ final class TagTests: XCTestCase {
         }
     }
 
-    // MARK: - Color Validation Tests
+    func testUpdate() {
+        let tag = Tag(name: "テスト", color: "#FF6B6B")
+        let originalUpdatedAt = tag.updatedAt
+
+        Thread.sleep(forTimeInterval: 0.01)
+        tag.update(name: "更新されたテスト", color: "#4ECDC4")
+
+        XCTAssertEqual(tag.name, "更新されたテスト")
+        XCTAssertEqual(tag.color, "#4ECDC4")
+        XCTAssertGreaterThan(tag.updatedAt, originalUpdatedAt)
+    }
+
+    func testPartialUpdate() {
+        let tag = Tag(name: "テスト", color: "#FF6B6B")
+        let originalColor = tag.color
+
+        tag.update(name: "新しい名前")
+
+        XCTAssertEqual(tag.name, "新しい名前")
+        XCTAssertEqual(tag.color, originalColor)
+    }
+
+    func testDefaultTags() {
+        XCTAssertFalse(Tag.defaultTags.isEmpty)
+        XCTAssertGreaterThanOrEqual(Tag.defaultTags.count, 4)
+
+        for (name, color) in Tag.defaultTags {
+            XCTAssertFalse(name.isEmpty)
+            XCTAssertTrue(Tag.validateColor(color))
+        }
+
+        let tagNames = Tag.defaultTags.map { $0.name }
+        XCTAssertTrue(tagNames.contains("私"))
+        XCTAssertTrue(tagNames.contains("家族"))
+        XCTAssertTrue(tagNames.contains("仕事"))
+        XCTAssertTrue(tagNames.contains("貯金"))
+    }
+
+    func testValidationPerformance() {
+        measure {
+            for _ in 0..<1_000 {
+                try? Tag.validate(name: "テスト", color: "#FF6B6B")
+            }
+        }
+    }
+}
+
+// MARK: - Color
+
+final class TagColorTests: XCTestCase {
 
     func testValidateColor() {
-        // Valid colors
         XCTAssertTrue(Tag.validateColor("#FF6B6B"))
         XCTAssertTrue(Tag.validateColor("#000000"))
         XCTAssertTrue(Tag.validateColor("#FFFFFF"))
         XCTAssertTrue(Tag.validateColor("#123ABC"))
 
-        // Invalid colors
-        XCTAssertFalse(Tag.validateColor("FF6B6B")) // Missing #
-        XCTAssertFalse(Tag.validateColor("#FF6B6")) // Too short
-        XCTAssertFalse(Tag.validateColor("#FF6B6BB")) // Too long
-        XCTAssertFalse(Tag.validateColor("#GG6B6B")) // Invalid hex
+        XCTAssertFalse(Tag.validateColor("FF6B6B"))
+        XCTAssertFalse(Tag.validateColor("#FF6B6"))
+        XCTAssertFalse(Tag.validateColor("#FF6B6BB"))
+        XCTAssertFalse(Tag.validateColor("#GG6B6B"))
         XCTAssertFalse(Tag.validateColor(""))
         XCTAssertFalse(Tag.validateColor("#"))
     }
 
-    // MARK: - SwiftUI Color Tests
-
     func testSwiftUIColor() {
         let tag = Tag(name: "テスト", color: "#FF6B6B")
-        let swiftUIColor = tag.swiftUIColor
-
-        // Test that color is created (not nil)
-        XCTAssertNotNil(swiftUIColor)
+        XCTAssertNotNil(tag.swiftUIColor)
     }
 
     func testSortOrderDefaultsToZero() {
         let tag = Tag(name: "デフォルト", color: "#123456")
-
         XCTAssertEqual(tag.sortOrder, 0)
     }
 
     func testSortOrderInitialization() {
         let tag = Tag(name: "位置", color: "#654321", sortOrder: 5)
-
         XCTAssertEqual(tag.sortOrder, 5)
     }
 
-    // MARK: - Color Extension Tests
-
     func testColorHexInitializer() {
-        // Test through Tag's swiftUIColor property which uses Color(hex:)
         let validTag = Tag(name: "テスト", color: "#FF6B6B")
         XCTAssertNotNil(validTag.swiftUIColor)
 
         let invalidTag = Tag(name: "テスト", color: "#INVALID")
-        // Even invalid colors should return a fallback color (blue)
         XCTAssertNotNil(invalidTag.swiftUIColor)
     }
 
-    // MARK: - Relationship Tests
+    func testColorValidationPerformance() {
+        measure {
+            for _ in 0..<1_000 {
+                _ = Tag.validateColor("#FF6B6B")
+            }
+        }
+    }
+}
 
-    @MainActor
-    func testTagCanBeAssignedToMultipleAccounts() {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(
-            for: BankAccount.self,
-            Tag.self,
-            AccountTagAssignment.self,
-            configurations: configuration
-        )
-        let context = container.mainContext
+// MARK: - Relationships
+
+@MainActor
+final class TagRelationshipTests: XCTestCase {
+
+    func testTagCanBeAssignedToMultipleAccounts() throws {
+        let (container, context) = try makeInMemoryStack()
+        _ = container
 
         let tag = Tag(name: "共用", color: "#FF6B6B")
         let accountA = BankAccount(
@@ -160,7 +195,7 @@ final class TagTests: XCTestCase {
         accountA.addTag(tag, in: context)
         accountB.addTag(tag, in: context)
 
-        try? context.save()
+        try context.save()
 
         XCTAssertTrue(accountA.tags.contains { $0.id == tag.id })
         XCTAssertTrue(accountB.tags.contains { $0.id == tag.id })
@@ -169,16 +204,9 @@ final class TagTests: XCTestCase {
         XCTAssertTrue(tag.accounts.contains { $0.id == accountB.id })
     }
 
-    @MainActor
-    func testRemovingTagDoesNotAffectOtherAccounts() {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(
-            for: BankAccount.self,
-            Tag.self,
-            AccountTagAssignment.self,
-            configurations: configuration
-        )
-        let context = container.mainContext
+    func testRemovingTagDoesNotAffectOtherAccounts() throws {
+        let (container, context) = try makeInMemoryStack()
+        _ = container
 
         let tag = Tag(name: "共用", color: "#FF6B6B")
         let accountA = BankAccount(
@@ -200,10 +228,10 @@ final class TagTests: XCTestCase {
 
         accountA.addTag(tag, in: context)
         accountB.addTag(tag, in: context)
-        try? context.save()
+        try context.save()
 
         accountA.removeTag(tag, in: context)
-        try? context.save()
+        try context.save()
 
         XCTAssertFalse(accountA.tags.contains { $0.id == tag.id })
         XCTAssertTrue(accountB.tags.contains { $0.id == tag.id })
@@ -211,116 +239,21 @@ final class TagTests: XCTestCase {
         XCTAssertTrue(tag.accounts.contains { $0.id == accountB.id })
     }
 
-    @MainActor
     func testSequentialAssignmentKeepsTagOnAllAccounts() throws {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: BankAccount.self,
-            Tag.self,
-            AccountTagAssignment.self,
-            configurations: configuration
-        )
-        let context = container.mainContext
+        let (container, context) = try makeInMemoryStack()
+        _ = container
 
         let sharedTag = Tag(name: "共用", color: "#FF6B6B")
         context.insert(sharedTag)
 
-        let accounts = [
-            BankAccount(
-                bankName: "口座A",
-                branchName: "支店A",
-                branchNumber: "111",
-                accountNumber: "1111111"
-            ),
-            BankAccount(
-                bankName: "口座B",
-                branchName: "支店B",
-                branchNumber: "222",
-                accountNumber: "2222222"
-            ),
-            BankAccount(
-                bankName: "口座C",
-                branchName: "支店C",
-                branchNumber: "333",
-                accountNumber: "3333333"
-            )
-        ]
-
-        accounts.forEach { context.insert($0) }
-
-        var assignedAccounts: [BankAccount] = []
-        for account in accounts {
-            account.updateTags([sharedTag], in: context)
-            assignedAccounts.append(account)
-
-            let expectedIDs = Set(assignedAccounts.map(\.id))
-            let currentIDs = Set(sharedTag.accounts.map(\.id))
-            XCTAssertEqual(currentIDs, expectedIDs, "タグ側の関連が反映されていません")
-
-            try context.save()
-
-            let savedIDs = Set(sharedTag.accounts.map(\.id))
-            XCTAssertEqual(savedIDs, expectedIDs, "保存後にタグ関連が失われました")
-
-            let accountID = account.id
-            let reloadedDescriptor = FetchDescriptor<BankAccount>(
-                predicate: #Predicate { $0.id == accountID }
-            )
-            guard let reloadedAccount = try context.fetch(reloadedDescriptor).first else {
-                XCTFail("口座がフェッチできません: \(account.bankName)")
-                return
-            }
-
-            XCTAssertTrue(
-                reloadedAccount.tags.contains { $0.id == sharedTag.id },
-                "保存直後の再フェッチでタグが見つかりません: \(account.bankName)"
-            )
-        }
-
-        for account in accounts {
-            XCTAssertTrue(
-                account.tags.contains { $0.id == sharedTag.id },
-                "メモリ上の口座からタグが外れています: \(account.bankName)"
-            )
-        }
-
-        let fetchAccounts = try context.fetch(FetchDescriptor<BankAccount>())
-        XCTAssertEqual(fetchAccounts.count, 3)
-        for account in fetchAccounts {
-            XCTAssertTrue(
-                account.tags.contains { $0.id == sharedTag.id },
-                "タグが保持されていません: \(account.bankName)"
-            )
-        }
-
-        let tagID = sharedTag.id
-        let tagFetch = FetchDescriptor<Tag>(
-            predicate: #Predicate { $0.id == tagID }
-        )
-        guard let persistedTag = try context.fetch(tagFetch).first else {
-            XCTFail("タグが保存されていません")
-            return
-        }
-
-        XCTAssertEqual(persistedTag.accounts.count, 3)
-        for account in fetchAccounts {
-            XCTAssertTrue(
-                persistedTag.accounts.contains { $0.id == account.id },
-                "口座からタグが外れています: \(account.bankName)"
-            )
-        }
+        let accounts = createSequentialAccounts(in: context)
+        try assignSharedTagSequentially(accounts: accounts, sharedTag: sharedTag, context: context)
+        try assertSharedTagPersistence(tag: sharedTag, context: context)
     }
 
-    @MainActor
     func testTagPersistsAcrossMultipleAccountsInModelContext() throws {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try ModelContainer(
-            for: BankAccount.self,
-            Tag.self,
-            AccountTagAssignment.self,
-            configurations: configuration
-        )
-        let context = container.mainContext
+        let (container, context) = try makeInMemoryStack()
+        _ = container
 
         let tag = Tag(name: "共用", color: "#FF6B6B")
         context.insert(tag)
@@ -347,10 +280,10 @@ final class TagTests: XCTestCase {
         try context.save()
 
         let tagID = tag.id
-        let tagFetch = FetchDescriptor<Tag>(
+        let descriptor = FetchDescriptor<Tag>(
             predicate: #Predicate { $0.id == tagID }
         )
-        guard let persistedTag = try context.fetch(tagFetch).first else {
+        guard let persistedTag = try context.fetch(descriptor).first else {
             XCTFail("タグが保存されていません")
             return
         }
@@ -360,67 +293,105 @@ final class TagTests: XCTestCase {
         XCTAssertTrue(persistedTag.accounts.contains { $0.id == accountB.id })
     }
 
-    // MARK: - Update Tests
-
-    func testUpdate() {
-        let tag = Tag(name: "テスト", color: "#FF6B6B")
-        let originalUpdatedAt = tag.updatedAt
-
-        // Wait a bit to ensure different timestamp
-        Thread.sleep(forTimeInterval: 0.01)
-
-        tag.update(name: "更新されたテスト", color: "#4ECDC4")
-
-        XCTAssertEqual(tag.name, "更新されたテスト")
-        XCTAssertEqual(tag.color, "#4ECDC4")
-        XCTAssertGreaterThan(tag.updatedAt, originalUpdatedAt)
+    private func makeInMemoryStack() throws -> (ModelContainer, ModelContext) {
+        let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
+        let container = try ModelContainer(
+            for: BankAccount.self,
+            Tag.self,
+            AccountTagAssignment.self,
+            configurations: configuration
+        )
+        return (container, container.mainContext)
     }
 
-    func testPartialUpdate() {
-        let tag = Tag(name: "テスト", color: "#FF6B6B")
-        let originalColor = tag.color
+    private func createSequentialAccounts(in context: ModelContext) -> [BankAccount] {
+        let accounts = [
+            BankAccount(
+                bankName: "口座A",
+                branchName: "支店A",
+                branchNumber: "111",
+                accountNumber: "1111111"
+            ),
+            BankAccount(
+                bankName: "口座B",
+                branchName: "支店B",
+                branchNumber: "222",
+                accountNumber: "2222222"
+            ),
+            BankAccount(
+                bankName: "口座C",
+                branchName: "支店C",
+                branchNumber: "333",
+                accountNumber: "3333333"
+            )
+        ]
 
-        tag.update(name: "新しい名前")
-
-        XCTAssertEqual(tag.name, "新しい名前")
-        XCTAssertEqual(tag.color, originalColor) // Unchanged
+        accounts.forEach { context.insert($0) }
+        return accounts
     }
 
-    // MARK: - Default Tags Tests
+    private func assignSharedTagSequentially(
+        accounts: [BankAccount],
+        sharedTag: Tag,
+        context: ModelContext
+    ) throws {
+        var assignedAccounts: [BankAccount] = []
 
-    func testDefaultTags() {
-        XCTAssertFalse(Tag.defaultTags.isEmpty)
-        XCTAssertGreaterThanOrEqual(Tag.defaultTags.count, 4)
+        for account in accounts {
+            account.updateTags([sharedTag], in: context)
+            assignedAccounts.append(account)
 
-        // Check that all default tags have valid names and colors
-        for (name, color) in Tag.defaultTags {
-            XCTAssertFalse(name.isEmpty)
-            XCTAssertTrue(Tag.validateColor(color))
+            let expectedIDs = Set(assignedAccounts.map(\.id))
+            let currentIDs = Set(sharedTag.accounts.map(\.id))
+            XCTAssertEqual(currentIDs, expectedIDs)
+
+            try context.save()
+
+            let savedIDs = Set(sharedTag.accounts.map(\.id))
+            XCTAssertEqual(savedIDs, expectedIDs)
+
+            try assertTagPersistence(for: account, sharedTag: sharedTag, context: context)
         }
 
-        // Check for specific expected tags
-        let tagNames = Tag.defaultTags.map { $0.name }
-        XCTAssertTrue(tagNames.contains("私"))
-        XCTAssertTrue(tagNames.contains("家族"))
-        XCTAssertTrue(tagNames.contains("仕事"))
-        XCTAssertTrue(tagNames.contains("貯金"))
-    }
-
-    // MARK: - Performance Tests
-
-    func testValidationPerformance() {
-        measure {
-            for _ in 0..<1000 {
-                try? Tag.validate(name: "テスト", color: "#FF6B6B")
-            }
+        for account in accounts {
+            XCTAssertTrue(account.tags.contains { $0.id == sharedTag.id })
         }
     }
 
-    func testColorValidationPerformance() {
-        measure {
-            for _ in 0..<1000 {
-                _ = Tag.validateColor("#FF6B6B")
-            }
+    private func assertSharedTagPersistence(tag: Tag, context: ModelContext) throws {
+        let accounts = try context.fetch(FetchDescriptor<BankAccount>())
+        XCTAssertEqual(accounts.count, 3)
+        for account in accounts {
+            XCTAssertTrue(account.tags.contains { $0.id == tag.id })
         }
+
+        let tagID = tag.id
+        let descriptor = FetchDescriptor<Tag>(predicate: #Predicate { $0.id == tagID })
+        guard let persistedTag = try context.fetch(descriptor).first else {
+            XCTFail("タグが保存されていません")
+            return
+        }
+
+        XCTAssertEqual(persistedTag.accounts.count, accounts.count)
+        for account in accounts {
+            XCTAssertTrue(persistedTag.accounts.contains { $0.id == account.id })
+        }
+    }
+
+    private func assertTagPersistence(
+        for account: BankAccount,
+        sharedTag: Tag,
+        context: ModelContext
+    ) throws {
+        let accountID = account.id
+        let descriptor = FetchDescriptor<BankAccount>(
+            predicate: #Predicate { $0.id == accountID }
+        )
+        guard let reloadedAccount = try context.fetch(descriptor).first else {
+            XCTFail("口座がフェッチできません: \(account.bankName)")
+            return
+        }
+
+        XCTAssertTrue(reloadedAccount.tags.contains { $0.id == sharedTag.id })
     }
 }
