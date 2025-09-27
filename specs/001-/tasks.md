@@ -1,204 +1,158 @@
-# Tasks: 銀行口座管理アプリ
+# タスク一覧: 銀行口座管理アプリ
 
-**Input**: Design documents from `/specs/001-/`
-**Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
+<!-- markdownlint-disable MD013 -->
 
-## Execution Flow (main)
-```
-1. Load plan.md from feature directory
-   → If not found: ERROR "No implementation plan found"
-   → Extract: tech stack, libraries, structure
-2. Load optional design documents:
-   → data-model.md: Extract entities → model tasks
-   → contracts/: Each file → contract test task
-   → research.md: Extract decisions → setup tasks
-3. Generate tasks by category:
-   → Setup: project init, dependencies, linting
-   → Tests: contract tests, integration tests
-   → Core: models, services, CLI commands
-   → Integration: DB, middleware, logging
-   → Polish: unit tests, performance, docs
-4. Apply task rules:
-   → Different files = mark [P] for parallel
-   → Same file = sequential (no [P])
-   → Tests before implementation (TDD)
-5. Number tasks sequentially (T001, T002...)
-6. Generate dependency graph
-7. Create parallel execution examples
-8. Validate task completeness:
-   → All contracts have tests?
-   → All entities have models?
-   → All endpoints implemented?
-9. Return: SUCCESS (tasks ready for execution)
-```
+**入力**: `/specs/001-/` 内の設計資料  
+**参照必須**: `plan.md`（必須）、`data-model.md`、`quickstart.md`、`contracts/`
 
-## Format: `[ID] [P?] Description`
-- **[P]**: Can run in parallel (different files, no dependencies)
-- Include exact file paths in descriptions
+## 実行フロー（/tasks コマンド相当）
 
-## Path Conventions
-- **Mobile iOS**: `ios/BankPocket/` for source, `ios/BankPocketTests/` for tests
-- Paths follow iOS project structure from plan.md
-
-## Phase 3.1: Setup
-- [ ] T001 Create iOS project structure with BankPocket.xcodeproj and folder hierarchy
-- [ ] T002 Configure iOS project with SwiftUI, Core Data framework dependencies
-- [ ] T003 [P] Setup SwiftLint configuration file (.swiftlint.yml) in project root
-- [ ] T004 [P] Create Core Data model file ios/BankPocket/Resources/BankPocket.xcdatamodeld
-
-## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
-**CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-
-### Service Contract Tests
-- [ ] T005 [P] CoreDataService contract test in ios/BankPocketTests/Services/CoreDataServiceTests.swift
-- [ ] T006 [P] AccountService contract test in ios/BankPocketTests/Services/AccountServiceTests.swift
-- [ ] T007 [P] TagService contract test in ios/BankPocketTests/Services/TagServiceTests.swift
-
-### Model Tests
-- [ ] T008 [P] BankAccount model test in ios/BankPocketTests/Models/BankAccountTests.swift
-- [ ] T009 [P] Tag model test in ios/BankPocketTests/Models/TagTests.swift
-
-### Integration Tests
-- [ ] T010 [P] Account registration integration test in ios/BankPocketTests/Integration/AccountRegistrationTests.swift
-- [ ] T011 [P] Tag assignment integration test in ios/BankPocketTests/Integration/TagAssignmentTests.swift
-- [ ] T012 [P] Account search integration test in ios/BankPocketTests/Integration/AccountSearchTests.swift
-- [ ] T013 [P] Data persistence integration test in ios/BankPocketTests/Integration/DataPersistenceTests.swift
-
-## Phase 3.3: Core Implementation (ONLY after tests are failing)
-
-### Core Data Models
-- [ ] T014 [P] BankAccount Core Data entity in ios/BankPocket/Models/BankAccount.swift
-- [ ] T015 [P] Tag Core Data entity in ios/BankPocket/Models/Tag.swift
-- [ ] T016 Configure Core Data relationships and constraints in BankPocket.xcdatamodeld
-
-### Services Layer
-- [ ] T017 [P] CoreDataService implementation in ios/BankPocket/Services/CoreDataService.swift
-- [ ] T018 AccountService implementation in ios/BankPocket/Services/AccountService.swift (depends on T017)
-- [ ] T019 TagService implementation in ios/BankPocket/Services/TagService.swift (depends on T017)
-
-### ViewModels (MVVM)
-- [ ] T020 [P] AccountListViewModel in ios/BankPocket/ViewModels/AccountListViewModel.swift
-- [ ] T021 [P] AccountFormViewModel in ios/BankPocket/ViewModels/AccountFormViewModel.swift
-- [ ] T022 [P] TagManagementViewModel in ios/BankPocket/ViewModels/TagManagementViewModel.swift
-
-### Views (SwiftUI)
-- [ ] T023 [P] AccountListView in ios/BankPocket/Views/AccountListView.swift
-- [ ] T024 [P] AccountFormView in ios/BankPocket/Views/AccountFormView.swift
-- [ ] T025 [P] TagManagementView in ios/BankPocket/Views/TagManagementView.swift
-- [ ] T026 [P] EmptyStateView component in ios/BankPocket/Views/Components/EmptyStateView.swift
-- [ ] T027 [P] AccountRowView component in ios/BankPocket/Views/Components/AccountRowView.swift
-- [ ] T028 [P] TagChipView component in ios/BankPocket/Views/Components/TagChipView.swift
-
-### Error Handling
-- [ ] T029 [P] AccountError enum in ios/BankPocket/Models/AccountError.swift
-- [ ] T030 [P] TagError enum in ios/BankPocket/Models/TagError.swift
-- [ ] T031 [P] CoreDataError enum in ios/BankPocket/Models/CoreDataError.swift
-
-## Phase 3.4: Integration
-- [ ] T032 App lifecycle integration in ios/BankPocket/App/BankPocketApp.swift
-- [ ] T033 Main ContentView with navigation in ios/BankPocket/App/ContentView.swift
-- [ ] T034 Core Data stack initialization and service injection
-- [ ] T035 Input validation and error message localization (Japanese)
-- [ ] T036 Search functionality integration across ViewModels
-
-## Phase 3.5: Polish
-- [ ] T037 [P] Unit tests for validation logic in ios/BankPocketTests/Unit/ValidationTests.swift
-- [ ] T038 [P] Unit tests for ViewModels in ios/BankPocketTests/Unit/ViewModelTests.swift
-- [ ] T039 Performance tests for Core Data operations (<100ms requirement)
-- [ ] T040 [P] UI accessibility labels and VoiceOver support
-- [ ] T041 Memory usage optimization (target <50MB)
-- [ ] T042 Execute quickstart.md validation scenarios
-- [ ] T043 Code review and refactoring for SwiftLint compliance
-
-## Dependencies
-- Setup (T001-T004) before everything
-- Tests (T005-T013) before implementation (T014-T036)
-- Core Data setup (T014-T016) before services (T017-T019)
-- Services (T017-T019) before ViewModels (T020-T022)
-- ViewModels before Views (T023-T028)
-- Error models (T029-T031) before services that use them
-- Core implementation before integration (T032-T036)
-- Everything before polish (T037-T043)
-
-## Detailed Dependencies
-- T017 (CoreDataService) blocks T018, T019
-- T018 (AccountService) blocks T020, T021
-- T019 (TagService) blocks T022
-- T020 (AccountListViewModel) blocks T023
-- T021 (AccountFormViewModel) blocks T024
-- T022 (TagManagementViewModel) blocks T025
-- T032 blocks T033, T034
-- T034 blocks T035, T036
-
-## Parallel Example
-```
-# Launch contract tests together (T005-T007):
-Task: "CoreDataService contract test in ios/BankPocketTests/Services/CoreDataServiceTests.swift"
-Task: "AccountService contract test in ios/BankPocketTests/Services/AccountServiceTests.swift"
-Task: "TagService contract test in ios/BankPocketTests/Services/TagServiceTests.swift"
-
-# Launch model tests together (T008-T009):
-Task: "BankAccount model test in ios/BankPocketTests/Models/BankAccountTests.swift"
-Task: "Tag model test in ios/BankPocketTests/Models/TagTests.swift"
-
-# Launch integration tests together (T010-T013):
-Task: "Account registration integration test in ios/BankPocketTests/Integration/AccountRegistrationTests.swift"
-Task: "Tag assignment integration test in ios/BankPocketTests/Integration/TagAssignmentTests.swift"
-Task: "Account search integration test in ios/BankPocketTests/Integration/AccountSearchTests.swift"
-Task: "Data persistence integration test in ios/BankPocketTests/Integration/DataPersistenceTests.swift"
-
-# Launch Core Data models together (T014-T015):
-Task: "BankAccount Core Data entity in ios/BankPocket/Models/BankAccount.swift"
-Task: "Tag Core Data entity in ios/BankPocket/Models/Tag.swift"
-
-# Launch ViewModels together after services complete (T020-T022):
-Task: "AccountListViewModel in ios/BankPocket/ViewModels/AccountListViewModel.swift"
-Task: "AccountFormViewModel in ios/BankPocket/ViewModels/AccountFormViewModel.swift"
-Task: "TagManagementViewModel in ios/BankPocket/ViewModels/TagManagementViewModel.swift"
+```text
+1. feature ディレクトリ直下の plan.md を読み取る
+   → 見つからなければ "No implementation plan found" で停止
+   → 技術スタック・ライブラリ・構成方針を抽出
+2. 任意ドキュメントを順に読み込む
+   → data-model.md: エンティティを読み取りモデルタスクへ展開
+   → contracts/: 各契約書から契約テストタスクを生成
+   → quickstart.md: 受け入れシナリオを統合テストへ反映
+3. カテゴリ別にタスクを生成
+   → Setup / Tests / Core / Integration / Polish
+4. タスクルールを適用
+   → 異なるファイルを扱うタスクは [P] で並行可と明示
+   → 同一ファイルを扱うタスクはシーケンシャル（[P] なし）
+   → テストは実装より先に配置（TDD）
+5. T001 から連番で採番
+6. 依存関係グラフを構築
+7. 並列実行のサンプルを提示
+8. 完全性チェック
+   → 各契約にテストが紐付いているか
+   → 各エンティティにモデルタスクが存在するか
+   → 主要受け入れ条件を満たす統合テストがあるか
+9. 成果物を返却（タスク準備完了）
 ```
 
-## Notes
-- [P] tasks = different files, no dependencies
-- Verify tests fail before implementing
-- Commit after each task
-- All UI text must be in Japanese
-- Follow iOS Human Interface Guidelines
-- Maintain 60fps performance and <50MB memory usage
+## 表記ルール
 
-## Task Generation Rules
-*Applied during main() execution*
+- 形式: `[ID] [P] 説明`
+- `[P]` は並列実行可能な場合のみ付与
+- 説明内に必ずファイルパスを明記（`bankpocket/...`）
 
-1. **From Contracts**:
-   - CoreDataService.md → T005, T017
-   - AccountService.md → T006, T018
-   - TagService.md → T007, T019
+## パス規約
 
-2. **From Data Model**:
-   - BankAccount entity → T008, T014
-   - Tag entity → T009, T015
-   - Relationships → T016, service dependencies
+- アプリ本体: `bankpocket/`
+- 単体テスト: `bankpocketTests/`
+- UI テスト: `bankpocketUITests/`
 
-3. **From User Stories** (quickstart.md):
-   - Account registration → T010
-   - Tag assignment → T011
-   - Search functionality → T012
-   - Data persistence → T013
+## フェーズ 3.1: セットアップ
 
-4. **Ordering**:
-   - Setup → Tests → Models → Services → ViewModels → Views → Integration → Polish
-   - Dependencies block parallel execution
+- [ ] T001 プロジェクトのフォルダ構成確認と必要な空ディレクトリの作成 (`bankpocket/`, `bankpocketTests/`)
+- [ ] T002 SwiftLint など開発ツールの設定ファイル整理（必要に応じて共有設定を定義）
+- [ ] T003 [P] Git フックや CI 設定の下書き（導入する場合は `scripts/` に配置）
 
-## Validation Checklist
-*GATE: Checked by main() before returning*
+## フェーズ 3.2: 先にテストを書く（TDD 必須）
 
-- [x] All contracts have corresponding tests (T005-T007)
-- [x] All entities have model tasks (T008-T009, T014-T015)
-- [x] All tests come before implementation (Phase 3.2 before 3.3)
-- [x] Parallel tasks truly independent (different files, no shared dependencies)
-- [x] Each task specifies exact file path
-- [x] No task modifies same file as another [P] task
-- [x] ViewModels follow MVVM pattern
-- [x] Core Data stack properly configured
-- [x] iOS project structure matches plan.md
-- [x] Japanese localization requirements included
-- [x] Performance requirements addressed (60fps, <50MB, <100ms)
+重要: すべての実装タスクより前に失敗するテストを追加すること
+
+### サービス契約テスト
+
+- [ ] T004 CoreData ベースの保存・取得の契約テストを `bankpocketTests/Services/CSVServiceTests.swift` に作成
+- [ ] T005 口座サービスの契約テストを `bankpocketTests/Services/AccountServiceTests.swift` に作成
+- [ ] T006 タグサービスの契約テストを `bankpocketTests/Services/TagServiceTests.swift` に作成
+
+### モデルテスト
+
+- [ ] T007 [P] `BankAccount` のバリデーション/リレーションテストを `bankpocketTests/Models/BankAccountTests.swift` に追加
+- [ ] T008 [P] `Tag` のバリデーション/リレーションテストを `bankpocketTests/Models/TagTests.swift` に追加
+
+### 統合テスト
+
+- [ ] T009 口座登録〜一覧反映の統合テストを `bankpocketTests/Integration/AccountRegistrationTests.swift` に追加
+- [ ] T010 タグ割り当てとフィルタリングの統合テストを `bankpocketTests/Integration/TagFilterTests.swift` に追加
+- [ ] T011 検索機能の統合テストを `bankpocketTests/Integration/AccountSearchTests.swift` に追加
+- [ ] T012 データ永続性（アプリ再起動相当）の統合テストを `bankpocketTests/Integration/DataPersistenceTests.swift` に追加
+
+## フェーズ 3.3: コア実装（テストが失敗している状態で着手）
+
+### SwiftData モデル
+
+- [ ] T013 [P] `bankpocket/Models/BankAccount.swift` に口座モデルとバリデーション実装
+- [ ] T014 [P] `bankpocket/Models/Tag.swift` にタグモデルとバリデーション実装
+- [ ] T015 `bankpocket/Models/AccountTagAssignment.swift` のリレーション管理と整合性処理
+- [ ] T016 SwiftData スキーマ全体の整備（`BankPocketApp.swift` 起動時のマイグレーション含む）
+
+### サービス層
+
+- [ ] T017 [P] CSV 入出力サービスを `bankpocket/Services/CSVService.swift` に実装
+- [ ] T018 口座操作のビジネスロジックを `bankpocket/Services/AccountService.swift` に実装（T013, T015 依存）
+- [ ] T019 タグ操作のビジネスロジックを `bankpocket/Services/TagService.swift` に実装（T014, T015 依存）
+
+### ViewModel（必要に応じて）
+
+- [ ] T020 [P] 一覧表示用ロジックを `bankpocket/ViewModels/AccountListViewModel.swift` に実装（サービス依存）
+- [ ] T021 [P] 口座フォーム用ロジックを `bankpocket/ViewModels/AccountFormViewModel.swift` に実装
+- [ ] T022 [P] タグ管理ロジックを `bankpocket/ViewModels/TagManagementViewModel.swift` に実装
+
+### SwiftUI ビュー
+
+- [ ] T023 [P] `bankpocket/Views/AccountListView.swift` を一覧 + フィルター機能込みで実装
+- [ ] T024 [P] `bankpocket/Views/AccountFormView.swift` を実装し、検証とタグ割当 UI を追加
+- [ ] T025 [P] `bankpocket/Views/TagManagementView.swift` を実装し、タグ作成/編集/削除を提供
+- [ ] T026 [P] 再利用コンポーネント（タグチップ、統計カードなど）を `bankpocket/Views/Components/` に分離
+
+### エラー定義
+
+- [ ] T027 [P] 共通バリデーションエラーを `bankpocket/Models/ValidationError.swift` に整理
+- [ ] T028 [P] CSV インポート時のエラー種別を `bankpocket/Services/CSVImportError.swift` に定義
+
+## フェーズ 3.4: 連携
+
+- [ ] T029 アプリエントリ `bankpocket/bankpocketApp.swift` で ModelContainer 初期化と DI を確立
+- [ ] T030 ルートビュー `bankpocket/ContentView.swift` のナビゲーションを調整
+- [ ] T031 View→Service の依存解決（`@Environment(\.modelContext)` 或いは DI) を統一
+- [ ] T032 多言語対応とエラーメッセージのローカライズ確認
+- [ ] T033 検索・フィルター・並び替えの状態同期を仕上げる
+
+## フェーズ 3.5: 仕上げ
+
+- [ ] T034 [P] バリデーションとサービスロジックの単体テスト補完
+- [ ] T035 [P] ViewModel テスト（モック化したサービスを使用）
+- [ ] T036 パフォーマンステスト（CoreData 操作 < 100ms 目標）
+- [ ] T037 アクセシビリティ対応（VoiceOver、Dynamic Type）
+- [ ] T038 メモリ使用量最適化チェック（50MB 未満）
+- [ ] T039 `quickstart.md` のシナリオを使った手動検証の実施記録
+- [ ] T040 SwiftLint など静的解析を通し、修正コミット
+
+## 依存関係概要
+
+- セットアップ (T001-T003) → すべてのタスクの前提
+- テスト (T004-T012) → 実装 (T013以降) の前
+- モデル (T013-T016) → サービス (T017-T019)
+- サービス → ViewModel → ビュー
+- エラー定義 → サービス/ビューが利用
+- 連携フェーズ → すべてのコア実装が揃ってから
+- 仕上げフェーズ → 最終確認
+
+## 並列実行例
+
+```text
+# サービス契約テスト群（T004-T006）を並行
+# モデルテスト群（T007-T008）も並行実行可能
+# SwiftData モデル（T013-T015）は異なるファイルに分かれるため並列可
+# ViewModel 実装（T020-T022）は依存完了後に並行で進められる
+```
+
+## 注意事項
+
+- [P] タスクは本当に依存がない場合のみ使用
+- テストは必ず先に失敗させてから実装
+- 1 タスク完了ごとにコミットを推奨
+- UI 文言は全て日本語で統一
+- 60fps と 50MB 未満という性能目標を常に意識
+
+## バリデーションチェック
+
+- [x] 各契約に対応するテストが存在
+- [x] 各エンティティにモデルタスクが存在
+- [x] テストが実装より先に配置されている
+- [x] 並列指定のタスクはファイルが衝突しない
+- [x] 各タスクに明確なファイルパスが記載されている

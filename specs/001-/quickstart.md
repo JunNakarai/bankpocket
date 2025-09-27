@@ -1,289 +1,328 @@
-# Quickstart Guide: 銀行口座管理アプリ
+# クイックスタートガイド: 銀行口座管理アプリ
 
-**Date**: 2025-09-18
-**Purpose**: Manual testing and validation of core functionality
+**日付**: 2025-09-18  
+**目的**: 中核機能の手動テストおよび検証手順の整理
 
-## Prerequisites
+## 前提条件
 
-### Development Environment
-- Xcode 15.0+
-- iOS Simulator 15.0+
-- Swift 5.9+
+### 開発環境
 
-### Project Setup
-1. Open BankPocket.xcodeproj in Xcode
-2. Select iOS Simulator (iPhone 14 or newer)
-3. Build and run (⌘+R)
+- Xcode 15.0 以上
+- iOS Simulator 15.0 以上
+- Swift 5.9 以上
 
-## Core Feature Validation
+### プロジェクトの準備
 
-### 1. Initial App Launch
-**Expected Behavior**:
-- App launches successfully
-- Empty account list is displayed
-- "口座を追加" (Add Account) button is visible
-- No crash or error messages
+1. `BankPocket.xcodeproj` を Xcode で開く
+2. テスト用デバイスとして iPhone 14 以降のシミュレータを選択
+3. ビルドして実行（⌘ + R）
 
-**Test Steps**:
-1. Launch app from Xcode
-2. Verify empty state UI is shown
-3. Check console for any error messages
+## 機能検証フロー
 
-**Success Criteria**:
-- ✅ App launches without crash
-- ✅ Empty state UI displayed
-- ✅ No error messages in console
+### 1. 初回起動
 
-### 2. Add First Bank Account
-**Test Data**:
-- Bank Name: みずほ銀行
-- Branch Name: 渋谷支店
-- Branch Number: 123
-- Account Number: 1234567
+期待挙動:
 
-**Test Steps**:
-1. Tap "口座を追加" button
-2. Fill in all required fields
-3. Tap "保存" (Save) button
-4. Return to account list
+- アプリが正常に起動する
+- 空の口座一覧が表示される
+- 「口座を追加」ボタンが見える
+- エラーやクラッシュが発生しない
 
-**Expected Behavior**:
-- Form accepts all input
-- No validation errors
-- Account appears in list
-- Account shows correct information
+手順:
 
-**Success Criteria**:
-- ✅ Form submission successful
-- ✅ Account visible in list
-- ✅ All data displayed correctly
-- ✅ Empty state no longer shown
+1. Xcode からアプリを起動
+2. 空状態の UI が表示されることを確認
+3. コンソールにエラーが出力されていないか確認
 
-### 3. Add Multiple Accounts
-**Test Data Set**:
+判定基準:
+
+- ✅ クラッシュなしで起動する
+- ✅ 空状態 UI が表示される
+- ✅ コンソールにエラーが出ない
+
+### 2. 初めての口座登録
+
+テストデータ:
+
+- 銀行名: みずほ銀行
+- 支店名: 渋谷支店
+- 支店番号: 123
+- 口座番号: 1234567
+
+手順:
+
+1. 「口座を追加」をタップ
+2. 必須項目を入力
+3. 「保存」をタップ
+4. 一覧画面へ戻る
+
+期待挙動:
+
+- 入力が受け付けられる
+- バリデーションエラーが表示されない
+- 一覧に新しい口座が追加される
+- 表示内容が入力値と一致する
+
+判定基準:
+
+- ✅ フォーム送信が成功する
+- ✅ 一覧に口座が表示される
+- ✅ 表示内容が正しい
+- ✅ 空状態の UI が消える
+
+### 3. 複数口座の登録
+
+テストデータ:
+
+```text
+口座2:
+- 銀行名: 三菱UFJ銀行
+- 支店名: 新宿支店
+- 支店番号: 456
+- 口座番号: 9876543
+
+口座3:
+- 銀行名: 三井住友銀行
+- 支店名: 池袋支店
+- 支店番号: 789
+- 口座番号: 5555555
 ```
-Account 2:
-- Bank: 三菱UFJ銀行
-- Branch: 新宿支店
-- Branch Number: 456
-- Account Number: 9876543
 
-Account 3:
-- Bank: 三井住友銀行
-- Branch: 池袋支店
-- Branch Number: 789
-- Account Number: 5555555
-```
+手順:
 
-**Test Steps**:
-1. Add Account 2 using above data
-2. Add Account 3 using above data
-3. Verify list shows all 3 accounts
-4. Check account ordering (by bank name)
+1. 上記データで口座2を登録
+2. 同様に口座3を登録
+3. 一覧に3件の口座が表示されるか確認
+4. 表示順が銀行名の昇順になっているか確認
 
-**Expected Behavior**:
-- All accounts added successfully
-- List shows accounts in alphabetical order by bank name
-- No duplicate entries
-- Performance remains smooth
+判定基準:
 
-**Success Criteria**:
-- ✅ 3 accounts total in list
-- ✅ Correct alphabetical ordering
-- ✅ No duplicates or corruption
+- ✅ すべての口座が登録できる
+- ✅ 一覧に3件表示される
+- ✅ 表示順が銀行名の昇順になる
+- ✅ 重複や表示崩れがない
 
-### 4. Create and Assign Tags
-**Test Tags**:
-- 私 (Blue color)
-- 妻 (Pink color)
-- 家計 (Orange color)
+### 4. タグの作成と割り当て
 
-**Test Steps**:
-1. Navigate to tags section
-2. Create "私" tag with blue color
-3. Create "妻" tag with pink color
-4. Create "家計" tag with orange color
-5. Assign "私" tag to first account
-6. Assign "妻" tag to second account
-7. Assign "家計" tag to third account
+テストタグ:
 
-**Expected Behavior**:
-- Tags created successfully
-- Colors displayed correctly
-- Tag assignment works
-- Accounts show assigned tags
+- 私（青）
+- 妻（ピンク）
+- 家計（オレンジ）
 
-**Success Criteria**:
-- ✅ All tags created with correct colors
-- ✅ Tag assignment successful
-- ✅ Tags visible on accounts
+手順:
 
-### 5. Filter by Tags
-**Test Steps**:
-1. Select "私" tag filter
-2. Verify only accounts with "私" tag shown
-3. Select "妻" tag filter
-4. Verify only accounts with "妻" tag shown
-5. Clear filter to show all accounts
+1. タグ管理画面へ移動
+2. 「私」タグを青で作成
+3. 「妻」タグをピンクで作成
+4. 「家計」タグをオレンジで作成
+5. 各口座にそれぞれ適切なタグを割り当て
 
-**Expected Behavior**:
-- Filtering works correctly
-- Only matching accounts displayed
-- Clear filter restores all accounts
-- UI indicates active filter
+期待挙動:
 
-**Success Criteria**:
-- ✅ Tag filtering works correctly
-- ✅ Filter clear restores all accounts
-- ✅ UI feedback for active filters
+- タグが登録される
+- 色が正しく表示される
+- 割り当て操作が成功する
+- 口座一覧にタグが表示される
 
-### 6. Edit Account Information
-**Test Steps**:
-1. Select first account (みずほ銀行)
-2. Edit account number to: 7777777
-3. Save changes
-4. Verify account list shows updated number
+判定基準:
 
-**Expected Behavior**:
-- Edit form pre-populated with current data
-- Changes saved successfully
-- List reflects updated information
-- updatedAt timestamp updated
+- ✅ タグが意図した色で表示される
+- ✅ 各口座にタグが表示される
+- ✅ エラーが発生しない
 
-**Success Criteria**:
-- ✅ Edit form works correctly
-- ✅ Changes persisted and visible
-- ✅ Data integrity maintained
+### 5. タグによる絞り込み
 
-### 7. Search Functionality
-**Test Steps**:
-1. Enter "みずほ" in search field
-2. Verify only みずほ銀行 account shown
-3. Enter "123" in search field
-4. Verify account with branch number 123 shown
-5. Clear search to show all accounts
+手順:
 
-**Expected Behavior**:
-- Search works on bank name
-- Search works on branch number
-- Case-insensitive matching
-- Real-time search results
+1. 「私」タグのフィルターを有効化
+2. 「私」タグ付きの口座のみ表示されることを確認
+3. 「妻」タグでも同様に確認
+4. フィルターを解除し、全口座が表示されることを確認
 
-**Success Criteria**:
-- ✅ Bank name search works
-- ✅ Branch number search works
-- ✅ Case-insensitive matching
-- ✅ Search clear restores all results
+期待挙動:
 
-### 8. Delete Account
-**Test Steps**:
-1. Select account to delete (third account)
-2. Tap delete option
-3. Confirm deletion
-4. Verify account removed from list
-5. Check that associated tags remain
+- 選択したタグのみ表示される
+- フィルターを解除すると全件に戻る
+- UI 上でフィルター状態がわかる
 
-**Expected Behavior**:
-- Confirmation dialog shown
-- Account deleted from storage
-- Tag relationships removed
-- Tags not deleted (still available for other accounts)
-- List updates correctly
+判定基準:
 
-**Success Criteria**:
-- ✅ Deletion confirmation required
-- ✅ Account permanently removed
-- ✅ Tags preserved for other accounts
-- ✅ List updated correctly
+- ✅ フィルターが正しく機能する
+- ✅ 解除で全口座が戻る
+- ✅ UI でフィルター状態が把握できる
 
-### 9. App State Persistence
-**Test Steps**:
-1. Force quit app
-2. Relaunch app
-3. Verify all data persists
-4. Check accounts, tags, and relationships
+### 6. 口座情報の編集
 
-**Expected Behavior**:
-- All accounts preserved
-- All tags preserved
-- Tag-account relationships preserved
-- No data corruption
+手順:
 
-**Success Criteria**:
-- ✅ Accounts persist across launches
-- ✅ Tags persist across launches
-- ✅ Relationships preserved
-- ✅ No data loss or corruption
+1. みずほ銀行の口座を開く
+2. 口座番号を 7777777 に変更
+3. 「保存」で確定
+4. 一覧に更新内容が反映されたか確認
 
-### 10. Error Handling
-**Test Steps**:
-1. Try to create account with empty bank name
-2. Try to create account with invalid branch number (letters)
-3. Try to create duplicate account
-4. Try to delete tag that's assigned to accounts
+期待挙動:
 
-**Expected Behavior**:
-- Validation errors displayed
-- User-friendly error messages in Japanese
-- No crashes or data corruption
-- Clear guidance on fixing errors
+- フォームに既存値が表示される
+- 変更が保存される
+- 一覧が最新情報に更新される
+- updatedAt が更新される
 
-**Success Criteria**:
-- ✅ Input validation works
-- ✅ Error messages in Japanese
-- ✅ No crashes during error conditions
-- ✅ Clear user guidance provided
+判定基準:
 
-## Performance Validation
+- ✅ 編集が正常に行える
+- ✅ 変更内容が表示に反映される
+- ✅ データが破損しない
 
-### Memory Usage
-**Test Steps**:
-1. Monitor app in Xcode Memory Debug Navigator
-2. Add 20+ accounts with tags
-3. Navigate through all screens
-4. Check memory usage stays under 50MB
+### 7. 検索機能
 
-**Success Criteria**:
-- ✅ Memory usage < 50MB with 20+ accounts
-- ✅ No memory leaks detected
-- ✅ Smooth performance maintained
+手順:
 
-### UI Responsiveness
-**Test Steps**:
-1. Add 50+ accounts (stress test)
-2. Scroll through account list
-3. Filter by tags with many accounts
-4. Search with many results
+1. 検索欄に「みずほ」と入力し、対象口座のみ表示されるか確認
+2. 続けて「123」と入力し、支店番号を含む口座がヒットするか確認
+3. 検索欄をクリアし、全件表示に戻ることを確認
 
-**Success Criteria**:
-- ✅ 60fps scrolling performance
-- ✅ < 100ms response time for data operations
-- ✅ No UI freezing or lag
+期待挙動:
 
-## Acceptance Checklist
+- 銀行名・支店番号に対してケースインセンシティブに一致する
+- 入力に応じて即時に一覧が更新される
+- クリアで全件表示に戻る
 
-### Core Functionality
-- [ ] App launches successfully
-- [ ] Account creation works
-- [ ] Account list displays correctly
-- [ ] Tag creation and assignment works
-- [ ] Tag filtering works
-- [ ] Account editing works
-- [ ] Account deletion works
-- [ ] Search functionality works
-- [ ] Data persistence works
+判定基準:
 
-### User Experience
-- [ ] All text in Japanese
-- [ ] Intuitive navigation
-- [ ] Error messages user-friendly
-- [ ] Responsive UI (60fps)
-- [ ] Memory efficient (<50MB)
+- ✅ 銀行名検索が機能する
+- ✅ 支店番号検索が機能する
+- ✅ 大文字小文字に依存しない
+- ✅ クリアで全件表示に戻る
 
-### Data Integrity
-- [ ] No data corruption
-- [ ] Proper validation
-- [ ] Referential integrity maintained
-- [ ] Graceful error handling
+### 8. 口座の削除
 
-**Status**: ✅ COMPLETE - Quickstart guide ready for testing
+手順:
+
+1. 3件目の口座を削除対象に選択
+2. スワイプ削除または削除ボタンを実行
+3. 確認ダイアログで削除を確定
+4. 一覧から口座が消えているか確認
+5. 他口座に設定したタグが残っているか確認
+
+期待挙動:
+
+- 確認ダイアログが表示される
+- 口座データが削除される
+- 関連タグの割り当ても解除される
+- タグ自体は削除されない
+
+判定基準:
+
+- ✅ 確認が必須になっている
+- ✅ 口座が完全に削除される
+- ✅ タグは他口座に残る
+- ✅ 一覧表示が更新される
+
+### 9. アプリ終了後の永続性
+
+手順:
+
+1. アプリを強制終了
+2. 再起動
+3. 口座・タグ・関連付けが残っているか確認
+
+期待挙動:
+
+- すべての口座が保持される
+- タグ情報も保持される
+- 割り当て関係が維持される
+- データ破損が起きない
+
+判定基準:
+
+- ✅ 口座が失われない
+- ✅ タグが失われない
+- ✅ 関連付けが維持される
+- ✅ データ破損がない
+
+### 10. エラーハンドリング
+
+手順:
+
+1. 銀行名が空の状態で保存を試す
+2. 支店番号に文字列を入力して保存を試す
+3. 重複する口座（銀行名 + 支店番号 + 口座番号が同じ）を作成する
+4. 使用中のタグを削除しようとする
+
+期待挙動:
+
+- バリデーションエラーが表示される
+- 日本語でわかりやすいエラーメッセージが出る
+- クラッシュやデータ破損が起きない
+- 修正方法が明示される
+
+判定基準:
+
+- ✅ 入力検証が機能する
+- ✅ メッセージが日本語で表示される
+- ✅ 異常時もクラッシュしない
+- ✅ 改善方法がわかる
+
+## パフォーマンス検証
+
+### メモリ使用量
+
+手順:
+
+1. Xcode のメモリデバッガを開く
+2. タグ付きで 20 口座以上を登録
+3. 画面遷移を一通り試す
+4. メモリ使用量が 50MB 未満か確認
+
+判定基準:
+
+- ✅ 20 口座時でも 50MB 未満
+- ✅ メモリリークが発生しない
+- ✅ 操作が重くならない
+
+### UI 応答性
+
+手順:
+
+1. ストレステストとして 50 口座以上登録
+2. 一覧スクロールの滑らかさを確認
+3. タグフィルター操作の応答を確認
+4. 検索操作の応答を確認
+
+判定基準:
+
+- ✅ スクロールが 60fps 近辺を維持
+- ✅ データ操作が 100ms 未満で完了
+- ✅ UI のフリーズが起きない
+
+## 受け入れチェックリスト
+
+### 基本機能
+
+- [ ] アプリが正常に起動する
+- [ ] 口座登録が機能する
+- [ ] 一覧表示が正しく行われる
+- [ ] タグの作成と割り当てができる
+- [ ] タグフィルターが機能する
+- [ ] 口座編集が機能する
+- [ ] 口座削除が機能する
+- [ ] 検索が機能する
+- [ ] データが永続化される
+
+### ユーザー体験
+
+- [ ] 表示テキストがすべて日本語
+- [ ] 直感的に操作できる
+- [ ] エラーメッセージがわかりやすい
+- [ ] UI が 60fps を維持
+- [ ] メモリ使用量が 50MB 未満
+
+### データ整合性
+
+- [ ] データ破損がない
+- [ ] 入力検証が適切
+- [ ] 関連データの整合性が保たれる
+- [ ] エラー時も安全に復帰できる
+
+**ステータス**: ✅ 完了 — クイックスタートガイドを利用可能

@@ -1,11 +1,14 @@
-# AccountService Contract
+# AccountService 契約
 
-**Service**: AccountService
-**Responsibility**: Bank account CRUD operations and business logic
+**サービス名**: AccountService  
+**役割**: 銀行口座の CRUD と関連ビジネスロジックを提供する
 
-## Interface Definition
+## インターフェース定義
 
-### Protocol
+### プロトコル
+
+<!-- markdownlint-disable MD013 -->
+
 ```swift
 protocol AccountServiceProtocol {
     func createAccount(bankName: String, branchName: String, branchNumber: String, accountNumber: String) async throws -> BankAccount
@@ -18,115 +21,125 @@ protocol AccountServiceProtocol {
 }
 ```
 
-## Operations
+<!-- markdownlint-enable MD013 -->
 
-### Create Account
-**Input**:
-- bankName: String (required, max 100 chars)
-- branchName: String (required, max 100 chars)
-- branchNumber: String (required, numeric, max 10 chars)
-- accountNumber: String (required, max 20 chars)
+## オペレーション詳細
 
-**Output**: BankAccount entity
+### createAccount
 
-**Business Rules**:
-- Validate all inputs are non-empty after trimming
-- Check for duplicate account (same bank + branch number + account number)
-- Throw AccountError.duplicateAccount if exists
-- Throw AccountError.invalidInput for validation failures
+#### createAccount: 入力
 
-**Errors**:
-- AccountError.duplicateAccount
-- AccountError.invalidInput(field: String)
-- AccountError.persistenceError
+- `bankName`: 必須、50 文字以内
+- `branchName`: 任意、50 文字以内
+- `branchNumber`: 任意、3 桁の数字文字列
+- `accountNumber`: 任意、7 桁の数字文字列
 
-### Get All Accounts
-**Input**: None
+#### createAccount: 出力
 
-**Output**: [BankAccount] (ordered by bank name, then branch name)
+- 作成された `BankAccount`
 
-**Business Rules**:
-- Return empty array if no accounts
-- Include all tag relationships
-- Order: bankName ASC, branchName ASC
+#### createAccount: ビジネスルール
 
-**Errors**:
-- AccountError.persistenceError
+- すべての文字列はトリムして検証する
+- (`bankName`, `branchNumber`, `accountNumber`) が同一の口座は重複とみなす
+- 重複時は `AccountError.duplicateAccount` を投げる
+- バリデーションに失敗したフィールドは `AccountError.invalidInput(field:)`
 
-### Get Account by ID
-**Input**: UUID
+### getAllAccounts
 
-**Output**: BankAccount? (nil if not found)
+#### getAllAccounts: 入力
 
-**Business Rules**:
-- Return nil for non-existent ID
-- Include tag relationships
+- なし
 
-**Errors**:
-- AccountError.persistenceError
+#### getAllAccounts: 出力
 
-### Update Account
-**Input**:
-- account: BankAccount (existing account)
-- bankName: String? (optional update)
-- branchName: String? (optional update)
-- branchNumber: String? (optional update)
-- accountNumber: String? (optional update)
+- `BankAccount` の配列（`sortOrder` 昇順 → `bankName` 昇順）
 
-**Output**: Updated BankAccount
+#### getAllAccounts: ビジネスルール
 
-**Business Rules**:
-- Only update provided fields (nil = no change)
-- Validate updated fields using same rules as create
-- Check for duplicates with new values
-- Update updatedAt timestamp
+- 口座がない場合は空配列
+- タグとの関連を含めて返す
 
-**Errors**:
-- AccountError.accountNotFound
-- AccountError.duplicateAccount
-- AccountError.invalidInput(field: String)
-- AccountError.persistenceError
+### getAccount(by:)
 
-### Delete Account
-**Input**: BankAccount
+#### getAccount(by:): 入力
 
-**Output**: Void
+- `UUID`
 
-**Business Rules**:
-- Remove all tag relationships automatically
-- Soft delete not required (permanent deletion)
+#### getAccount(by:): 出力
 
-**Errors**:
-- AccountError.accountNotFound
-- AccountError.persistenceError
+- 該当する `BankAccount`、存在しなければ `nil`
 
-### Search Accounts
-**Input**: query: String (search term)
+#### getAccount(by:): ビジネスルール
 
-**Output**: [BankAccount] (matching accounts)
+- 存在しない ID は `nil` を返す
+- タグの関連情報も取得する
 
-**Business Rules**:
-- Search in bankName, branchName, accountNumber
-- Case-insensitive partial matching
-- Return empty array if no matches
-- Trim query string
+### updateAccount
 
-**Errors**:
-- AccountError.persistenceError
+#### updateAccount: 入力
 
-### Get Accounts by Tag
-**Input**: Tag
+- `account`: 更新対象
+- `bankName` / `branchName` / `branchNumber` / `accountNumber`: それぞれ任意更新
 
-**Output**: [BankAccount] (accounts with specified tag)
+#### updateAccount: 出力
 
-**Business Rules**:
-- Return empty array if tag has no accounts
-- Order same as getAllAccounts
+- 更新後の `BankAccount`
 
-**Errors**:
-- AccountError.persistenceError
+#### updateAccount: ビジネスルール
 
-## Error Definitions
+- `nil` のフィールドは変更しない
+- 更新後の値も作成時と同じバリデーションを適用
+- 変更により別口座と重複する場合は `duplicateAccount`
+- 更新成功時は `updatedAt` を再設定
+
+### deleteAccount
+
+#### deleteAccount: 入力
+
+- `BankAccount`
+
+#### deleteAccount: 出力
+
+- なし
+
+#### deleteAccount: ビジネスルール
+
+- 関連する `AccountTagAssignment` をすべて削除
+- ソフトデリートは不要（完全削除）
+
+### searchAccounts
+
+#### searchAccounts: 入力
+
+- `query` 文字列
+
+#### searchAccounts: 出力
+
+- 条件に一致した `BankAccount` 配列
+
+#### searchAccounts: ビジネスルール
+
+- `bankName` / `branchName` / `branchNumber` / `accountNumber` を対象に部分一致検索
+- 大文字小文字を区別しない
+- 空文字列の場合は全件返す
+
+### getAccountsByTag
+
+#### getAccountsByTag: 入力
+
+- `Tag`
+
+#### getAccountsByTag: 出力
+
+- 指定タグが付与された `BankAccount` 配列
+
+#### getAccountsByTag: ビジネスルール
+
+- タグに紐付く口座がなければ空配列
+- 並び順は `getAllAccounts` と同一
+
+## エラー定義
 
 ```swift
 enum AccountError: Error, LocalizedError {
@@ -150,26 +163,22 @@ enum AccountError: Error, LocalizedError {
 }
 ```
 
-## Test Contract Requirements
+## テスト契約
 
-### Unit Tests Required
-1. **testCreateAccountSuccess** - Valid input creates account
-2. **testCreateAccountDuplicate** - Duplicate throws error
-3. **testCreateAccountInvalidInput** - Invalid input throws error
-4. **testGetAllAccountsEmpty** - Returns empty array when no accounts
-5. **testGetAllAccountsOrdered** - Returns accounts in correct order
-6. **testGetAccountByIdExists** - Returns correct account for valid ID
-7. **testGetAccountByIdNotExists** - Returns nil for invalid ID
-8. **testUpdateAccountSuccess** - Updates account fields correctly
-9. **testUpdateAccountDuplicate** - Update creating duplicate throws error
-10. **testDeleteAccountSuccess** - Removes account and relationships
-11. **testSearchAccountsSuccess** - Returns matching accounts
-12. **testSearchAccountsEmpty** - Returns empty array for no matches
-13. **testGetAccountsByTag** - Returns accounts for specific tag
+### 単体テスト
 
-### Integration Tests Required
-1. **testAccountTagRelationshipCascade** - Deleting account removes tag relationships
-2. **testAccountPersistence** - Created accounts persist across app restarts
-3. **testConcurrentOperations** - Multiple operations don't corrupt data
+1. `testCreateAccountSuccess` — 正常入力で口座が作成される
+2. `testCreateAccountDuplicate` — 重複入力で `duplicateAccount` を投げる
+3. `testCreateAccountInvalidInput` — 不正入力で `invalidInput` を投げる
+4. `testGetAllAccountsEmpty` — 口座がない場合は空配列
+5. `testGetAllAccountsOrdered` — 並び順が `sortOrder` → `bankName` になる
+6. `testGetAccountById` — 既存 ID を取得できる
+7. `testUpdateAccount` — 更新が成功し `updatedAt` が変化する
+8. `testDeleteAccount` — 割り当てごと削除される
+9. `testSearchAccounts` — 部分一致検索が機能する
+10. `testGetAccountsByTag` — タグでの取得が機能する
 
-**Status**: ✅ COMPLETE - AccountService contract defined
+### 例外系検証
+
+- 永続化層エラー発生時に `persistenceError` を上位へ伝播する
+- 存在しない ID 更新・削除時に `accountNotFound` を返す

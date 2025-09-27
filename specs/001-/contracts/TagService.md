@@ -1,14 +1,17 @@
-# TagService Contract
+# TagService 契約
 
-**Service**: TagService
-**Responsibility**: Tag CRUD operations and tag-account relationship management
+**サービス名**: TagService  
+**役割**: タグの CRUD と口座との関連付けを管理する
 
-## Interface Definition
+## インターフェース定義
 
-### Protocol
+### プロトコル
+
+<!-- markdownlint-disable MD013 -->
+
 ```swift
 protocol TagServiceProtocol {
-    func createTag(name: String, color: String?) async throws -> Tag
+    func createTag(name: String, color: String) async throws -> Tag
     func getAllTags() async throws -> [Tag]
     func getTag(by id: UUID) async throws -> Tag?
     func getTag(by name: String) async throws -> Tag?
@@ -16,158 +19,172 @@ protocol TagServiceProtocol {
     func deleteTag(_ tag: Tag) async throws
     func addTag(_ tag: Tag, to account: BankAccount) async throws
     func removeTag(_ tag: Tag, from account: BankAccount) async throws
-    func getDefaultTags() -> [String]
+    func suggestedTags() -> [(name: String, color: String)]
 }
 ```
 
-## Operations
+<!-- markdownlint-enable MD013 -->
 
-### Create Tag
-**Input**:
-- name: String (required, max 50 chars, unique)
-- color: String? (optional, hex format #RRGGBB)
+## オペレーション
 
-**Output**: Tag entity
+### createTag
 
-**Business Rules**:
-- Validate name is non-empty after trimming
-- Check name uniqueness (case-insensitive)
-- Validate color format if provided
-- Throw TagError.duplicateName if name exists
-- Throw TagError.invalidInput for validation failures
+#### createTag: 入力
 
-**Errors**:
-- TagError.duplicateName
-- TagError.invalidInput(field: String)
-- TagError.persistenceError
+- `name`: 必須、30 文字以内（大文字小文字を無視してユニーク）
+- `color`: 必須、`#RRGGBB` 形式
 
-### Get All Tags
-**Input**: None
+#### createTag: 出力
 
-**Output**: [Tag] (ordered by name ascending)
+- 作成した `Tag`
 
-**Business Rules**:
-- Return empty array if no tags
-- Order: name ASC
-- Include account count in relationships
+#### createTag: ビジネスルール
 
-**Errors**:
-- TagError.persistenceError
+- 空文字や重複名は許可しない
+- カラーコードの形式を検証する
+- `sortOrder` は既存の最大値 + 1 を割り当てる
 
-### Get Tag by ID
-**Input**: UUID
+#### createTag: エラー
 
-**Output**: Tag? (nil if not found)
+- `TagError.duplicateName`
+- `TagError.invalidInput(field:)`
+- `TagError.persistenceError`
 
-**Business Rules**:
-- Return nil for non-existent ID
-- Include account relationships
+### getAllTags
 
-**Errors**:
-- TagError.persistenceError
+#### getAllTags: 入力
 
-### Get Tag by Name
-**Input**: name: String
+- なし
 
-**Output**: Tag? (nil if not found)
+#### getAllTags: 出力
 
-**Business Rules**:
-- Case-insensitive name matching
-- Return nil for non-existent name
-- Include account relationships
+- `Tag` 配列（`sortOrder` 昇順 → `createdAt` 昇順）
 
-**Errors**:
-- TagError.persistenceError
+#### getAllTags: ビジネスルール
 
-### Update Tag
-**Input**:
-- tag: Tag (existing tag)
-- name: String? (optional update)
-- color: String? (optional update)
+- 空の場合は空配列
+- 各 `Tag` に `accountCount` を算出できるようリレーションを含めて取得
 
-**Output**: Updated Tag
+### getTag(by: UUID)
 
-**Business Rules**:
-- Only update provided fields (nil = no change)
-- Validate name uniqueness if changing name
-- Validate color format if changing color
-- Preserve account relationships
+#### getTag(by UUID): 入力
 
-**Errors**:
-- TagError.tagNotFound
-- TagError.duplicateName
-- TagError.invalidInput(field: String)
-- TagError.persistenceError
+- `UUID`
 
-### Delete Tag
-**Input**: Tag
+#### getTag(by UUID): 出力
 
-**Output**: Void
+- `Tag?`
 
-**Business Rules**:
-- Remove tag from all associated accounts
-- Permanent deletion (no soft delete)
-- Cannot delete if tag has accounts (business rule to prevent accidental deletion)
+#### getTag(by UUID): ビジネスルール
 
-**Errors**:
-- TagError.tagNotFound
-- TagError.tagHasAccounts
-- TagError.persistenceError
+- 該当しない ID の場合は `nil`
+- リレーションを含めて返す
 
-### Add Tag to Account
-**Input**:
-- tag: Tag
-- account: BankAccount
+### getTag(by: String)
 
-**Output**: Void
+#### getTag(by name): 入力
 
-**Business Rules**:
-- Add many-to-many relationship
-- No-op if relationship already exists
-- Both entities must exist
+- タグ名
 
-**Errors**:
-- TagError.tagNotFound
-- TagError.accountNotFound
-- TagError.persistenceError
+#### getTag(by name): 出力
 
-### Remove Tag from Account
-**Input**:
-- tag: Tag
-- account: BankAccount
+- `Tag?`
 
-**Output**: Void
+#### getTag(by name): ビジネスルール
 
-**Business Rules**:
-- Remove many-to-many relationship
-- No-op if relationship doesn't exist
-- Don't delete tag or account
+- 大文字小文字を無視して一致させる
+- 見つからない場合は `nil`
 
-**Errors**:
-- TagError.tagNotFound
-- TagError.accountNotFound
-- TagError.persistenceError
+### updateTag
 
-### Get Default Tags
-**Input**: None
+#### updateTag: 入力
 
-**Output**: [String] (suggested tag names)
+- `tag`: 既存タグ
+- `name` / `color`: 任意更新
 
-**Business Rules**:
-- Return predefined list of common family tags
-- Used for UI suggestions when creating tags
-- Does not create actual Tag entities
+#### updateTag: 出力
 
-**Errors**: None (pure function)
+- 更新後の `Tag`
 
-## Error Definitions
+#### updateTag: ビジネスルール
+
+- `nil` のフィールドは変更しない
+- 新しい名前が既存タグと重複したら `duplicateName`
+- カラーコードは常に検証する
+- 更新後は `updatedAt` と `sortOrder` を必要に応じて調整
+
+#### updateTag: エラー
+
+- `TagError.tagNotFound`
+- `TagError.duplicateName`
+- `TagError.invalidInput(field:)`
+- `TagError.persistenceError`
+
+### deleteTag
+
+#### deleteTag: 入力
+
+- `Tag`
+
+#### deleteTag: 出力
+
+- なし
+
+#### deleteTag: ビジネスルール
+
+- 関連する口座との割り当てを解除してから削除
+- 既に割り当てがある場合でも削除可能だが確認ダイアログで警告
+
+#### deleteTag: エラー
+
+- `TagError.tagNotFound`
+- `TagError.persistenceError`
+
+### addTag / removeTag
+
+#### addTag/removeTag: 入力
+
+- `Tag`
+- `BankAccount`
+
+#### addTag/removeTag: 出力
+
+- なし
+
+#### addTag/removeTag: ビジネスルール
+
+- 多対多の割り当てを追加/削除する
+- 既に割り当て済みの場合は重複して追加しない
+- 割り当てが存在しない場合の削除は no-op
+
+#### addTag/removeTag: エラー
+
+- `TagError.tagNotFound`
+- `TagError.accountNotFound`
+- `TagError.persistenceError`
+
+### suggestedTags
+
+#### suggestedTags: 入力
+
+- なし
+
+#### suggestedTags: 出力
+
+- 推奨タグの配列（名前とカラーコード）
+
+#### suggestedTags: ビジネスルール
+
+- アプリ初回起動時などに UI が提示する初期候補
+- 実際のタグレコードは別途生成する
+
+## エラー定義
 
 ```swift
 enum TagError: Error, LocalizedError {
     case duplicateName
     case tagNotFound
     case accountNotFound
-    case tagHasAccounts
     case invalidInput(field: String)
     case persistenceError
 
@@ -178,51 +195,30 @@ enum TagError: Error, LocalizedError {
         case .tagNotFound:
             return "タグが見つかりません"
         case .accountNotFound:
-            return "口座が見つかりません"
-        case .tagHasAccounts:
-            return "このタグは口座に関連付けられているため削除できません"
+            return "指定した口座が見つかりません"
         case .invalidInput(let field):
             return "\(field)の入力が無効です"
         case .persistenceError:
-            return "データの保存に失敗しました"
+            return "データ保存処理でエラーが発生しました"
         }
     }
 }
 ```
 
-## Default Tag Definitions
+## テスト契約
 
-```swift
-extension TagService {
-    func getDefaultTags() -> [String] {
-        return ["私", "妻", "夫", "子供", "家計", "貯金", "投資", "共用"]
-    }
-}
-```
+### 単体テスト
 
-## Test Contract Requirements
+1. `testCreateTagSuccess` — 正常系でタグが作成される
+2. `testCreateTagDuplicate` — 重複名で `duplicateName` を投げる
+3. `testCreateTagInvalidColor` — カラーコード不正で `invalidInput`
+4. `testGetAllTagsSorted` — 並び順が `sortOrder` を維持する
+5. `testUpdateTagName` — 名前変更時もユニーク制約が守られる
+6. `testDeleteTagRemovesAssignments` — 割り当ても解除される
+7. `testAddTagToAccount` — 重複なく割り当てが作成される
+8. `testRemoveTagFromAccount` — 割り当てのみ削除される
 
-### Unit Tests Required
-1. **testCreateTagSuccess** - Valid input creates tag
-2. **testCreateTagDuplicate** - Duplicate name throws error
-3. **testCreateTagInvalidColor** - Invalid color format throws error
-4. **testGetAllTagsEmpty** - Returns empty array when no tags
-5. **testGetAllTagsOrdered** - Returns tags in alphabetical order
-6. **testGetTagByIdExists** - Returns correct tag for valid ID
-7. **testGetTagByIdNotExists** - Returns nil for invalid ID
-8. **testGetTagByNameExists** - Returns correct tag for valid name
-9. **testGetTagByNameNotExists** - Returns nil for invalid name
-10. **testUpdateTagSuccess** - Updates tag fields correctly
-11. **testUpdateTagDuplicate** - Update creating duplicate throws error
-12. **testDeleteTagSuccess** - Removes tag when no accounts
-13. **testDeleteTagWithAccounts** - Throws error when tag has accounts
-14. **testAddTagToAccount** - Creates relationship successfully
-15. **testRemoveTagFromAccount** - Removes relationship successfully
-16. **testGetDefaultTags** - Returns expected default tag list
+### 統合テスト
 
-### Integration Tests Required
-1. **testTagAccountRelationshipBidirectional** - Relationship works both directions
-2. **testTagDeletionCascade** - Tag deletion removes all account relationships
-3. **testTagPersistence** - Created tags persist across app restarts
-
-**Status**: ✅ COMPLETE - TagService contract defined
+- タグの作成 → 口座へ割り当て → フィルター表示の一連の流れが動作する
+- 並び替え操作が `sortOrder` に保存され、他画面にも反映される

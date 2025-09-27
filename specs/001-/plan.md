@@ -1,188 +1,125 @@
-# Implementation Plan: 銀行口座管理アプリ
+# 実装計画: 銀行口座管理アプリ
 
-**Branch**: `001-` | **Date**: 2025-09-18 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-/spec.md`
+**ブランチ**: `001-`  |  **日付**: 2025-09-18  |  **仕様書**: [spec.md](./spec.md)  
+**入力**: `/specs/001-/spec.md` のフィーチャ仕様
 
-## Execution Flow (/plan command scope)
-```
-1. Load feature spec from Input path
-   → If not found: ERROR "No feature spec at {path}"
-2. Fill Technical Context (scan for NEEDS CLARIFICATION)
-   → Detect Project Type from context (web=frontend+backend, mobile=app+api)
-   → Set Structure Decision based on project type
-3. Fill the Constitution Check section based on the content of the constitution document.
-4. Evaluate Constitution Check section below
-   → If violations exist: Document in Complexity Tracking
-   → If no justification possible: ERROR "Simplify approach first"
-   → Update Progress Tracking: Initial Constitution Check
-5. Execute Phase 0 → research.md
-   → If NEEDS CLARIFICATION remain: ERROR "Resolve unknowns"
-6. Execute Phase 1 → contracts, data-model.md, quickstart.md, agent-specific template file (e.g., `CLAUDE.md` for Claude Code, `.github/copilot-instructions.md` for GitHub Copilot, `GEMINI.md` for Gemini CLI, `QWEN.md` for Qwen Code or `AGENTS.md` for opencode).
-7. Re-evaluate Constitution Check section
-   → If new violations: Refactor design, return to Phase 1
-   → Update Progress Tracking: Post-Design Constitution Check
-8. Plan Phase 2 → Describe task generation approach (DO NOT create tasks.md)
-9. STOP - Ready for /tasks command
-```
+## 実行手順（/plan コマンド想定）
 
-**IMPORTANT**: The /plan command STOPS at step 7. Phases 2-4 are executed by other commands:
-- Phase 2: /tasks command creates tasks.md
-- Phase 3-4: Implementation execution (manual or via tools)
+```text
+1. 指定パスから仕様書を読み込む
+   → 見つからない場合は "No feature spec at {path}" で終了
+2. 技術コンテキスト欄を埋める（不明点は NEEDS CLARIFICATION として記録）
+   → プロジェクト種別を判定し、構成方針を決定
+3. 憲法チェック（constitution）を参照し、違反があれば記録
+4. Phase 0 研究: 不明点があれば洗い出し、解決できない場合はエラー
+5. Phase 1 設計: contracts / data-model / quickstart などのドキュメントを出力
+6. 憲法チェックを再実行し、設計時の逸脱がないか確認
+7. Phase 2 ではタスク生成方針のみ整理（実際の tasks.md 生成は /tasks）
+8. 以降の実装フェーズは /plan の対象外として終了
+```text
 
-## Summary
-家族の銀行口座情報を一元管理するiOSアプリ。口座の登録、一覧表示、タグ機能による分類を実装。外部連携なし、ローカルデータ保存のシンプルなアナログ入力ベースのアプローチ。SwiftとCoreDataを使用したネイティブiOSアプリケーション。
+## サマリー
 
-## Technical Context
-**Language/Version**: Swift 5.9+
-**Primary Dependencies**: UIKit, CoreData, Foundation
-**Storage**: CoreData (ローカルデータベース)
-**Testing**: XCTest (単体・統合テスト)
-**Target Platform**: iOS 15.0+
-**Project Type**: mobile (iOS単体アプリ)
-**Performance Goals**: 60fps UI, <100ms データ操作レスポンス
-**Constraints**: オフライン動作必須, メモリ使用量 <50MB
-**Scale/Scope**: 個人・家族利用 (~10-50口座), シングルユーザー
+家族が保有する複数の銀行口座をタグで整理する iOS アプリ。
+SwiftUI + SwiftData を採用し、オフライン利用と軽量な CSV 入出力をサポート。
+UI は日本語のみ、外部 API 連携なし。
 
-## Constitution Check
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+## 技術コンテキスト
 
-Constitution template is blank/placeholder - no specific constitutional requirements found. Proceeding with standard iOS development best practices:
-- MVVM architecture for testability
-- Core Data for data persistence
-- Single app target (no complexity)
-- Native iOS UI components
+- **言語 / バージョン**: Swift 5.9 以上
+- **主要依存**: SwiftUI, SwiftData, Foundation, UniformTypeIdentifiers
+- **データストア**: SwiftData (SQLite バックエンド)
+- **テスト**: XCTest（ユニット / 統合 / UI）
+- **ターゲット OS**: iOS 17.0 以上（シミュレータ iPhone 16 を想定）
+- **プロジェクト種別**: モバイル単体アプリ（サーバ連携なし）
+- **パフォーマンス目標**: UI 60fps、主要操作 100ms 以内
+- **制約**: 完全オフライン対応、メモリ使用量 50MB 以内
 
-**PASS**: No constitutional violations detected
+## 憲法チェック
 
-## Project Structure
+- 現時点で constitution に特別な制約なし
+- MVVM を基本に View とモデルを分離
+- ネイティブ UI を利用し、プラットフォーム規約に従う
 
-### Documentation (this feature)
-```
+**判定**: PASS（違反なし）
+
+## プロジェクト構成
+
+### ドキュメント（仕様ディレクトリ）
+
+```text
 specs/001-/
-├── plan.md              # This file (/plan command output)
-├── research.md          # Phase 0 output (/plan command)
-├── data-model.md        # Phase 1 output (/plan command)
-├── quickstart.md        # Phase 1 output (/plan command)
-├── contracts/           # Phase 1 output (/plan command)
-└── tasks.md             # Phase 2 output (/tasks command - NOT created by /plan)
+├── spec.md            # 仕様書
+├── plan.md            # この計画書
+├── data-model.md      # データモデル定義
+├── quickstart.md      # 手動検証手順
+├── tasks.md           # タスク一覧（/tasks で生成）
+└── contracts/         # サービス契約定義（必要時）
+### ソースコード
+
+```text
+
+bankpocket/
+├── bankpocketApp.swift
+├── ContentView.swift
+├── Models/
+├── Services/
+├── Utils/
+└── Views/
+
+bankpocketTests/
+└── ...（ユニット・統合テスト）
+
+bankpocketUITests/
+└── ...（UI テスト）
+
 ```
 
-### Source Code (repository root)
-```
-# Option 3: Mobile + API (iOS単体アプリ)
-ios/
-├── BankPocket/
-│   ├── App/
-│   │   ├── BankPocketApp.swift
-│   │   └── ContentView.swift
-│   ├── Models/
-│   │   ├── BankAccount.swift
-│   │   └── Tag.swift
-│   ├── ViewModels/
-│   │   ├── AccountListViewModel.swift
-│   │   └── AccountFormViewModel.swift
-│   ├── Views/
-│   │   ├── AccountListView.swift
-│   │   ├── AccountFormView.swift
-│   │   └── Components/
-│   ├── Services/
-│   │   └── CoreDataService.swift
-│   └── Resources/
-│       └── BankPocket.xcdatamodeld
-└── BankPocketTests/
-    ├── Models/
-    ├── ViewModels/
-    └── Services/
-```
+## Phase 0: 調査状況
 
-**Structure Decision**: Option 3 (Mobile) - iOS単体アプリケーション
+- 仕様上の不明点は quickstart と data-model で補完済み
+- CoreData ではなく SwiftData を採用する方針を確定
+- 追加の事前調査は不要
 
-## Phase 0: Outline & Research
-No NEEDS CLARIFICATION markers remain in Technical Context. All technical decisions are clear:
-- Swift/iOS development stack
-- CoreData for persistence
-- Standard iOS app architecture
-- Target iOS 15.0+
+## Phase 1: 設計結果
 
-**Research Complete**: All technical unknowns resolved
+1. **データモデル**: BankAccount / Tag / AccountTagAssignment の 3 エンティティとバリデーションを定義
+2. **サービス契約**: 口座操作、タグ操作、CSV 入出力のインターフェースを整理（contracts 配下）
+3. **受け入れシナリオ**: quickstart.md に 10 個の検証ケースを記載
+4. **View / ViewModel 方針**: SwiftUI + MVVM、DI は `@Environment(\.modelContext)` を基本に構成
 
-## Phase 1: Design & Contracts
+## Phase 2: タスク生成方針（説明のみ）
 
-### 1. Data Model Design
-From feature specification entities:
-- **BankAccount**: bankName, branchName, branchNumber, accountNumber, tags
-- **Tag**: name, accounts (relationship)
+- `/tasks` では tests → implementation → polish の順にタスク化
+- 各契約/エンティティ/受け入れシナリオから最低 1 つずつテストタスクを作成
+- 並列実行可能なタスクは `[P]` を付け、依存関係を明示
+- 出力ファイルは `specs/001-/tasks.md`
 
-### 2. API Contracts (Local Operations)
-Since this is a local-only app, "contracts" are internal service interfaces:
-- AccountService: CRUD operations for bank accounts
-- TagService: Tag management operations
-- StorageService: CoreData persistence layer
+## Phase 3 以降（参考）
 
-### 3. Contract Tests
-Unit tests for service layer interfaces ensuring data integrity and business rules
+- Phase 3: `/tasks` でタスク生成、進捗管理の起点
+- Phase 4: タスクに沿って実装、テスト、リファクタリング
+- Phase 5: quickstart.md と自動テストで検証 → リリース準備
 
-### 4. Integration Test Scenarios
-Based on acceptance scenarios from spec:
-- Account registration flow
-- Account listing with tag filtering
-- Account editing and deletion
-- Tag assignment and management
+## 複雑性トラッキング
 
-### 5. Agent Context Update
-Update CLAUDE.md with current iOS/Swift project context
+- 特筆すべき憲法違反や例外対応なし
 
-**Design Phase Ready for Execution**
+## 進捗トラッキング
 
-## Phase 2: Task Planning Approach
-*This section describes what the /tasks command will do - DO NOT execute during /plan*
+- [x] Phase 0: 調査完了
+- [x] Phase 1: 設計完了
+- [x] Phase 2: タスク生成方針の整理完了
+- [ ] Phase 3: タスク生成（未実施）
+- [ ] Phase 4: 実装（未実施）
+- [ ] Phase 5: 検証（未実施）
 
-**Task Generation Strategy**:
-- Load `.specify/templates/tasks-template.md` as base
-- Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
-- Each service interface → contract test task [P]
-- Each Core Data entity → model creation task [P]
-- Each user story → integration test task
-- Implementation tasks to make tests pass
+### ゲート確認
 
-**Ordering Strategy**:
-- TDD order: Tests before implementation
-- Dependency order: Models before ViewModels before Views
-- Core Data setup before model tests
-- Mark [P] for parallel execution (independent files)
-
-**Estimated Output**: 20-25 numbered, ordered tasks in tasks.md
-
-**IMPORTANT**: This phase is executed by the /tasks command, NOT by /plan
-
-## Phase 3+: Future Implementation
-*These phases are beyond the scope of the /plan command*
-
-**Phase 3**: Task execution (/tasks command creates tasks.md)
-**Phase 4**: Implementation (execute tasks.md following iOS best practices)
-**Phase 5**: Validation (run tests, execute quickstart.md, UI testing validation)
-
-## Complexity Tracking
-*Fill ONLY if Constitution Check has violations that must be justified*
-
-No constitutional violations detected. Standard iOS app architecture used.
-
-## Progress Tracking
-*This checklist is updated during execution flow*
-
-**Phase Status**:
-- [x] Phase 0: Research complete (/plan command)
-- [x] Phase 1: Design complete (/plan command)
-- [x] Phase 2: Task planning complete (/plan command - describe approach only)
-- [ ] Phase 3: Tasks generated (/tasks command)
-- [ ] Phase 4: Implementation complete
-- [ ] Phase 5: Validation passed
-
-**Gate Status**:
-- [x] Initial Constitution Check: PASS
-- [x] Post-Design Constitution Check: PASS
-- [x] All NEEDS CLARIFICATION resolved
-- [x] Complexity deviations documented
+- [x] 初回憲法チェック: PASS
+- [x] 設計後憲法チェック: PASS
+- [x] 不明点の解消: 完了
+- [x] 逸脱記録: 不要
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Constitution v2.1.1 を参照。必要に応じて `/memory/constitution.md` を更新してください。*

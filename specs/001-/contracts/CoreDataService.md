@@ -1,211 +1,135 @@
-# CoreDataService Contract
+# SwiftDataService 契約
 
-**Service**: CoreDataService
-**Responsibility**: Core Data stack management and low-level persistence operations
+**サービス名**: SwiftDataService  
+**役割**: SwiftData の `ModelContainer` を初期化し、`ModelContext` に対する保存処理やバックグラウンド実行を提供する
 
-## Interface Definition
+> 旧仕様では Core Data を利用していたが、本プロジェクトでは SwiftData を採用する。以下は SwiftData 前提の契約内容である。
 
-### Protocol
+## インターフェース定義
+
+### プロトコル（例）
+
+<!-- markdownlint-disable MD013 -->
+
 ```swift
-protocol CoreDataServiceProtocol {
-    var viewContext: NSManagedObjectContext { get }
-    var backgroundContext: NSManagedObjectContext { get }
+protocol SwiftDataServiceProtocol {
+    var container: ModelContainer { get }
+    var mainContext: ModelContext { get }
 
-    func saveContext() async throws
-    func saveContext(_ context: NSManagedObjectContext) async throws
-    func performBackgroundTask<T>(_ block: @escaping (NSManagedObjectContext) throws -> T) async throws -> T
-    func reset() async throws
+    func save(_ context: ModelContext?) throws
+    func performBackgroundTask<T>(_ operation: @escaping (ModelContext) throws -> T) async throws -> T
+    func reset(store: ModelContainer? ) throws
 }
 ```
 
-## Core Data Stack
+<!-- markdownlint-enable MD013 -->
 
-### Persistent Container Configuration
-- **Store Type**: NSSQLiteStoreType
-- **Store Name**: "BankPocket.sqlite"
-- **Store Location**: Application Documents Directory
-- **Migration**: Automatic lightweight migration enabled
-- **WAL Mode**: Enabled for better performance
-- **Foreign Key Constraints**: Enabled
+## モデルコンテナ構成
 
-### Context Configuration
-- **Main Context**: NSMainQueueConcurrencyType for UI operations
-- **Background Context**: NSPrivateQueueConcurrencyType for heavy operations
-- **Merge Policy**: NSMergeByPropertyObjectTrumpMergePolicy
-- **Undo Manager**: Disabled for performance
+- **対象モデル**: `BankAccount`, `Tag`, `AccountTagAssignment`
+- **ストア形式**: `.sqlite`
+- **配置場所**: アプリの Application Support ディレクトリ
+- **マイグレーション**: ライトウェイトマイグレーション有効
+- **永続ストア設定**: WAL モードを有効化し書き込み性能を確保
+- **データ保全**: 起動時に sortOrder の欠損や重複がないか確認し補正
 
-## Operations
+## オペレーション
 
-### Save Context (Main)
-**Input**: None (operates on viewContext)
+### save
 
-**Output**: Void
+#### save: 入力
 
-**Business Rules**:
-- Only save if context has changes
-- Automatic merge with background context changes
-- Handle save conflicts with merge policy
+- `ModelContext?`（省略時は `mainContext`）
 
-**Errors**:
-- CoreDataError.saveError(NSError)
-- CoreDataError.contextError
+#### save: 出力
 
-### Save Context (Specific)
-**Input**: NSManagedObjectContext
+- なし
 
-**Output**: Void
+#### save: ビジネスルール
 
-**Business Rules**:
-- Save specific context to persistent store
-- Handle parent context chain saves
-- Merge changes to other contexts
+- `context.hasChanges` が `true` のときのみ保存
+- 失敗時はエラーメッセージをローカライズして上位へ伝搬
+- 保存成功後は必要に応じて `context.reset()` でキャッシュをクリア
 
-**Errors**:
-- CoreDataError.saveError(NSError)
-- CoreDataError.contextError
+#### save: エラー
 
-### Perform Background Task
-**Input**: Block returning generic type T
+- `SwiftDataError.saveFailed(underlying: Error)`
 
-**Output**: T (result of block execution)
+### performBackgroundTask
 
-**Business Rules**:
-- Execute block on background context
-- Automatic context save if changes made
-- Exception handling for block execution
+#### performBackgroundTask: 入力
 
-**Errors**:
-- CoreDataError.backgroundTaskError
-- CoreDataError.saveError(NSError)
+- `ModelContext` を受け取る非同期クロージャ
 
-### Reset
-**Input**: None
+#### performBackgroundTask: 出力
 
-**Output**: Void
+- クロージャの戻り値
 
-**Business Rules**:
-- Reset both main and background contexts
-- Clear all in-memory changes
-- Used for testing and error recovery
+#### performBackgroundTask: ビジネスルール
 
-**Errors**:
-- CoreDataError.resetError
+- バックグラウンド用 `ModelContext` を生成してクロージャに渡す
+- 処理中に例外が発生した場合は保存を行わずに再スロー
+- クロージャ内で `save()` を呼ぶか、サービス側で検知して保存する
 
-## Error Definitions
+#### performBackgroundTask: エラー
+
+- `SwiftDataError.backgroundTaskFailed(underlying: Error)`
+
+### reset
+
+#### reset: 入力
+
+- 任意の `ModelContainer`（省略時は既定のコンテナ）
+
+#### reset: 出力
+
+- なし
+
+#### reset: ビジネスルール
+
+- テストなどで利用するリセット操作。ストアファイルを削除し新たに初期化
+- 実運用では多用しないため、明示的に呼び出す場面を制限する
+
+#### reset: エラー
+
+- `SwiftDataError.resetFailed`
+
+## エラー定義
 
 ```swift
-enum CoreDataError: Error, LocalizedError {
-    case initializationError
-    case saveError(NSError)
-    case contextError
-    case backgroundTaskError
-    case resetError
+enum SwiftDataError: Error, LocalizedError {
+    case saveFailed(underlying: Error)
+    case backgroundTaskFailed(underlying: Error)
+    case resetFailed
+    case containerInitializationFailed
 
     var errorDescription: String? {
         switch self {
-        case .initializationError:
-            return "データベースの初期化に失敗しました"
-        case .saveError(let error):
+        case .saveFailed(let error):
             return "データの保存に失敗しました: \(error.localizedDescription)"
-        case .contextError:
-            return "データコンテキストエラーが発生しました"
-        case .backgroundTaskError:
-            return "バックグラウンド処理でエラーが発生しました"
-        case .resetError:
+        case .backgroundTaskFailed(let error):
+            return "バックグラウンド処理に失敗しました: \(error.localizedDescription)"
+        case .resetFailed:
             return "データベースのリセットに失敗しました"
+        case .containerInitializationFailed:
+            return "モデルコンテナの初期化に失敗しました"
         }
     }
 }
 ```
 
-## Core Data Model Configuration
+## テスト契約
 
-### Entity Configurations
+### 単体テスト
 
-#### BankAccount Entity
-```swift
-// Entity: BankAccount
-// Code Generation: Category/Extension
-@objc(BankAccount)
-public class BankAccount: NSManagedObject {
-    // Auto-generated properties and relationships
-}
+1. `testSaveWhenContextHasChanges` — 変更がある場合に保存が行われる
+2. `testSaveWithoutChanges` — 変更がない場合は保存が呼ばれない
+3. `testSaveFailurePropagatesError` — 保存失敗時に `saveFailed` を返す
+4. `testPerformBackgroundTaskSuccess` — バックグラウンド処理の結果が戻る
+5. `testPerformBackgroundTaskFailure` — 例外が `backgroundTaskFailed` として伝搬
+6. `testResetRemovesStore` — リセット後にストアが再作成される
 
-extension BankAccount {
-    @NSManaged public var id: UUID
-    @NSManaged public var bankName: String
-    @NSManaged public var branchName: String
-    @NSManaged public var branchNumber: String
-    @NSManaged public var accountNumber: String
-    @NSManaged public var createdAt: Date
-    @NSManaged public var updatedAt: Date
-    @NSManaged public var tags: NSSet?
-}
-```
+### 統合テスト
 
-#### Tag Entity
-```swift
-// Entity: Tag
-// Code Generation: Category/Extension
-@objc(Tag)
-public class Tag: NSManagedObject {
-    // Auto-generated properties and relationships
-}
-
-extension Tag {
-    @NSManaged public var id: UUID
-    @NSManaged public var name: String
-    @NSManaged public var color: String?
-    @NSManaged public var createdAt: Date
-    @NSManaged public var accounts: NSSet?
-}
-```
-
-### Fetch Request Templates
-- **AllAccounts**: Fetch all accounts ordered by bankName
-- **AllTags**: Fetch all tags ordered by name
-- **AccountsByTag**: Fetch accounts filtered by specific tag
-- **SearchAccounts**: Fetch accounts matching search criteria
-
-### Performance Configurations
-- **Batch Size**: 50 for large result sets
-- **Fetch Limit**: 1000 maximum per request
-- **Relationship Faulting**: Enabled for memory efficiency
-- **Indexes**: bankName, tag.name for faster queries
-
-## Migration Strategy
-
-### Version 1.0 → 1.1 (Example Future Migration)
-- **Lightweight Migration**: Add optional fields
-- **Heavyweight Migration**: For relationship changes
-- **Migration Policy**: Custom NSEntityMigrationPolicy if needed
-- **Data Validation**: Post-migration data integrity checks
-
-## Test Configuration
-
-### Test Core Data Stack
-- **In-Memory Store**: NSInMemoryStoreType for fast tests
-- **Isolated Context**: Each test gets fresh context
-- **Test Data Factory**: Predefined test entities
-- **Context Reset**: Automatic cleanup between tests
-
-## Test Contract Requirements
-
-### Unit Tests Required
-1. **testCoreDataStackInitialization** - Stack initializes correctly
-2. **testSaveContextWithChanges** - Save succeeds with changes
-3. **testSaveContextWithoutChanges** - Save no-op without changes
-4. **testSaveContextError** - Handle save errors gracefully
-5. **testBackgroundTaskSuccess** - Background task executes correctly
-6. **testBackgroundTaskWithSave** - Background changes saved automatically
-7. **testBackgroundTaskError** - Handle background task errors
-8. **testContextMerging** - Changes merge between contexts
-9. **testResetContext** - Reset clears all changes
-10. **testConcurrentAccess** - Multiple contexts access safely
-
-### Integration Tests Required
-1. **testPersistenceAcrossLaunches** - Data persists between app launches
-2. **testMigrationCompatibility** - Schema migrations work correctly
-3. **testMemoryManagement** - No memory leaks in Core Data operations
-
-**Status**: ✅ COMPLETE - CoreDataService contract defined
+- コンテナを初期化し、`BankAccount` と `Tag` の CRUD が一貫して実行できるか確認
+- 並行アクセス時にデータ破損が発生しないことを検証
