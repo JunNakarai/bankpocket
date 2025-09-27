@@ -12,7 +12,12 @@ struct AccountFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query private var existingAccounts: [BankAccount]
-    @Query private var tags: [Tag]
+    @Query(
+        sort: [
+            SortDescriptor(\Tag.sortOrder, order: .forward),
+            SortDescriptor(\Tag.createdAt, order: .forward)
+        ]
+    ) private var tags: [Tag]
 
     let account: BankAccount?
 

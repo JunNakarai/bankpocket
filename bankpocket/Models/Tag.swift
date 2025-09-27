@@ -16,15 +16,17 @@ final class Tag {
     var color: String
     var createdAt: Date
     var updatedAt: Date
+    var sortOrder: Int
 
     var tagAssignments: [AccountTagAssignment]
 
-    init(name: String, color: String) {
+    init(name: String, color: String, sortOrder: Int = 0) {
         self.id = UUID()
         self.name = name
         self.color = color
         self.createdAt = Date()
         self.updatedAt = Date()
+        self.sortOrder = sortOrder
         self.tagAssignments = []
     }
 

@@ -11,7 +11,12 @@ import SwiftData
 struct TagFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query private var existingTags: [Tag]
+    @Query(
+        sort: [
+            SortDescriptor(\Tag.sortOrder, order: .forward),
+            SortDescriptor(\Tag.createdAt, order: .forward)
+        ]
+    ) private var existingTags: [Tag]
 
     let tag: Tag?
 
@@ -158,7 +163,8 @@ struct TagFormView: View {
                 tag.update(name: trimmedName, color: tagColor)
             } else {
                 // Create new tag
-                let newTag = Tag(name: trimmedName, color: tagColor)
+                let nextSortOrder = (existingTags.map(\.sortOrder).max() ?? -1) + 1
+                let newTag = Tag(name: trimmedName, color: tagColor, sortOrder: nextSortOrder)
                 modelContext.insert(newTag)
             }
 

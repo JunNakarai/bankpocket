@@ -11,7 +11,12 @@ import SwiftData
 struct AccountListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \BankAccount.sortOrder, order: .forward) private var accounts: [BankAccount]
-    @Query private var tags: [Tag]
+    @Query(
+        sort: [
+            SortDescriptor(\Tag.sortOrder, order: .forward),
+            SortDescriptor(\Tag.createdAt, order: .forward)
+        ]
+    ) private var tags: [Tag]
 
     @Binding var showingAddAccount: Bool
     @Binding var showingImportExport: Bool

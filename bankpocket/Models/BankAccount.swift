@@ -50,7 +50,14 @@ final class BankAccount {
     }
 
     var tags: [Tag] {
-        tagAssignments.map(\.tag)
+        tagAssignments
+            .map(\.tag)
+            .sorted { lhs, rhs in
+                if lhs.sortOrder == rhs.sortOrder {
+                    return lhs.name < rhs.name
+                }
+                return lhs.sortOrder < rhs.sortOrder
+            }
     }
 
     // MARK: - Update Method

@@ -10,7 +10,12 @@ import SwiftData
 
 struct TagManagementView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var tags: [Tag]
+    @Query(
+        sort: [
+            SortDescriptor(\Tag.sortOrder, order: .forward),
+            SortDescriptor(\Tag.createdAt, order: .forward)
+        ]
+    ) private var tags: [Tag]
     @Query private var accounts: [BankAccount]
 
     @State private var searchText = ""
@@ -21,6 +26,7 @@ struct TagManagementView: View {
     @State private var tagToDelete: Tag?
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var didNormalizeSortOrder = false
 
     var body: some View {
         NavigationStack {
@@ -83,6 +89,9 @@ struct TagManagementView: View {
                 Button("OK") { }
             } message: {
                 Text(errorMessage)
+            }
+            .task {
+                await normalizeTagSortOrdersIfNeeded()
             }
         }
     }
@@ -147,6 +156,8 @@ struct TagManagementView: View {
                     }
                 }
             }
+            .onMove(perform: moveTags)
+            .moveDisabled(!searchText.isEmpty)
         }
         .listStyle(PlainListStyle())
     }
@@ -188,7 +199,15 @@ struct TagManagementView: View {
         let filtered = searchText.isEmpty ? tags : tags.filter { tag in
             tag.name.localizedCaseInsensitiveContains(searchText)
         }
-        return filtered.sorted { $0.name < $1.name }
+        return filtered.sorted { lhs, rhs in
+            if lhs.sortOrder == rhs.sortOrder {
+                if lhs.createdAt == rhs.createdAt {
+                    return lhs.name < rhs.name
+                }
+                return lhs.createdAt < rhs.createdAt
+            }
+            return lhs.sortOrder < rhs.sortOrder
+        }
     }
 
     private var usedTags: [Tag] {
@@ -203,12 +222,14 @@ struct TagManagementView: View {
 
     private func createDefaultTags() {
         do {
+            var nextSortOrder = (tags.map(\.sortOrder).max() ?? -1) + 1
             for (name, color) in Tag.defaultTags {
                 // Check if tag already exists
                 let exists = tags.contains { $0.name == name }
                 if !exists {
-                    let tag = Tag(name: name, color: color)
+                    let tag = Tag(name: name, color: color, sortOrder: nextSortOrder)
                     modelContext.insert(tag)
+                    nextSortOrder += 1
                 }
             }
             try modelContext.save()
@@ -235,6 +256,58 @@ struct TagManagementView: View {
             modelContext.delete(tag)
             try? modelContext.save()
         }
+    }
+
+    @MainActor
+    private func moveTags(from source: IndexSet, to destination: Int) {
+        guard searchText.isEmpty else { return }
+
+        var reorderedTags = filteredTags
+        reorderedTags.move(fromOffsets: source, toOffset: destination)
+
+        for (index, tag) in reorderedTags.enumerated() {
+            tag.sortOrder = index
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            errorMessage = "順序の保存に失敗しました: \(error.localizedDescription)"
+            showingError = true
+        }
+    }
+
+    @MainActor
+    private func normalizeTagSortOrdersIfNeeded() async {
+        guard !didNormalizeSortOrder else { return }
+
+        let sortOrders = tags.map(\.sortOrder)
+        let hasDuplicates = Set(sortOrders).count != sortOrders.count
+        let hasOnlyZeros = sortOrders.allSatisfy { $0 == 0 }
+        guard hasDuplicates || hasOnlyZeros else {
+            didNormalizeSortOrder = true
+            return
+        }
+
+        let orderedTags = tags.sorted { lhs, rhs in
+            if lhs.name == rhs.name {
+                return lhs.createdAt < rhs.createdAt
+            }
+            return lhs.name < rhs.name
+        }
+
+        for (index, tag) in orderedTags.enumerated() {
+            tag.sortOrder = index
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            errorMessage = "初期並び順の設定に失敗しました: \(error.localizedDescription)"
+            showingError = true
+        }
+
+        didNormalizeSortOrder = true
     }
 }
 
