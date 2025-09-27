@@ -102,6 +102,18 @@ final class TagTests: XCTestCase {
         XCTAssertNotNil(swiftUIColor)
     }
 
+    func testSortOrderDefaultsToZero() {
+        let tag = Tag(name: "デフォルト", color: "#123456")
+
+        XCTAssertEqual(tag.sortOrder, 0)
+    }
+
+    func testSortOrderInitialization() {
+        let tag = Tag(name: "位置", color: "#654321", sortOrder: 5)
+
+        XCTAssertEqual(tag.sortOrder, 5)
+    }
+
     // MARK: - Color Extension Tests
 
     func testColorHexInitializer() {

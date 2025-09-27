@@ -163,6 +163,25 @@ final class BankAccountTests: XCTestCase {
         XCTAssertEqual(account.fullDisplayName, "みずほ銀行 渋谷支店 (123)")
     }
 
+    func testTagsAreSortedBySortOrder() {
+        let account = BankAccount(
+            bankName: "みずほ銀行",
+            branchName: "渋谷支店",
+            branchNumber: "123",
+            accountNumber: "1234567"
+        )
+
+        let tagHigh = Tag(name: "高", color: "#FFFFFF", sortOrder: 10)
+        let tagLow = Tag(name: "低", color: "#000000", sortOrder: 1)
+
+        _ = AccountTagAssignment(account: account, tag: tagHigh)
+        _ = AccountTagAssignment(account: account, tag: tagLow)
+
+        let orderedTagNames = account.tags.map(\.name)
+
+        XCTAssertEqual(orderedTagNames, ["低", "高"])
+    }
+
     // MARK: - Update Tests
 
     func testUpdate() {
