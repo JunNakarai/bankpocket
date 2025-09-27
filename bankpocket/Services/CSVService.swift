@@ -49,6 +49,55 @@ class CSVService {
     // MARK: - Import
 
     func importAccountsFromCSV(url: URL) throws -> ImportResult {
+        let dataLines = try loadCSVDataLines(from: url)
+        let tagLookup = try fetchExistingTags()
+        var existingAccounts = try modelContext.fetch(FetchDescriptor<BankAccount>())
+        var nextSortOrder = (existingAccounts.map(\.sortOrder).max() ?? -1) + 1
+
+        var accumulator = ImportAccumulator()
+
+        for (index, line) in dataLines.enumerated() {
+            do {
+                let parsedLine = try parseAccountFields(from: line)
+                try validateDuplicateAccount(parsedLine, within: existingAccounts)
+                try BankAccount.validate(
+                    bankName: parsedLine.bankName,
+                    branchName: parsedLine.branchName,
+                    branchNumber: parsedLine.branchNumber,
+                    accountNumber: parsedLine.accountNumber
+                )
+
+                let account = BankAccount(
+                    bankName: parsedLine.bankName,
+                    branchName: parsedLine.branchName,
+                    branchNumber: parsedLine.branchNumber,
+                    accountNumber: parsedLine.accountNumber,
+                    sortOrder: nextSortOrder
+                )
+
+                assignTags(parsedLine.tags, to: account, using: tagLookup)
+
+                modelContext.insert(account)
+                existingAccounts.append(account)
+                nextSortOrder += 1
+                accumulator.recordSuccess()
+            } catch {
+                accumulator.recordError(
+                    "行\(index + 2): \(error.localizedDescription)"
+                )
+            }
+        }
+
+        if accumulator.successCount > 0 {
+            try modelContext.save()
+        }
+
+        return accumulator.buildResult()
+    }
+
+    // MARK: - Helper Methods
+
+    private func loadCSVDataLines(from url: URL) throws -> [String] {
         guard url.startAccessingSecurityScopedResource() else {
             throw CSVError.fileAccessDenied
         }
@@ -61,99 +110,63 @@ class CSVService {
             throw CSVError.invalidFormat
         }
 
-        // Skip header line
-        let dataLines = Array(lines.dropFirst()).filter { !$0.isEmpty }
-        var successCount = 0
-        var errorCount = 0
-        var errors: [String] = []
+        return Array(lines.dropFirst()).filter { !$0.isEmpty }
+    }
 
-        // Get existing tags for mapping
-        let fetchDescriptor = FetchDescriptor<Tag>()
-        let existingTags = try modelContext.fetch(fetchDescriptor)
-        let tagDict = Dictionary(uniqueKeysWithValues: existingTags.map { ($0.name, $0) })
+    private func fetchExistingTags() throws -> [String: Tag] {
+        let descriptor = FetchDescriptor<Tag>()
+        let tags = try modelContext.fetch(descriptor)
+        return Dictionary(uniqueKeysWithValues: tags.map { ($0.name, $0) })
+    }
 
-        for (index, line) in dataLines.enumerated() {
-            do {
-                let fields = parseCSVLine(line)
+    private func parseAccountFields(from line: String) throws -> CSVAccountFields {
+        let fields = parseCSVLine(line)
 
-                guard fields.count >= 4 else {
-                    throw CSVError.invalidRowFormat
-                }
-
-                let bankName = fields[0].trimmingCharacters(in: .whitespacesAndNewlines)
-                let branchName = fields.count > 1 ? fields[1].trimmingCharacters(in: .whitespacesAndNewlines) : ""
-                let branchNumber = fields.count > 2 ? fields[2].trimmingCharacters(in: .whitespacesAndNewlines) : ""
-                let accountNumber = fields.count > 3 ? fields[3].trimmingCharacters(in: .whitespacesAndNewlines) : ""
-                let tagNames = fields.count > 4 ? fields[4].trimmingCharacters(in: .whitespacesAndNewlines) : ""
-
-                // Validate
-                try BankAccount.validate(
-                    bankName: bankName,
-                    branchName: branchName,
-                    branchNumber: branchNumber,
-                    accountNumber: accountNumber
-                )
-
-                // Check for duplicates
-                let existingAccounts = try modelContext.fetch(FetchDescriptor<BankAccount>())
-                let isDuplicate = existingAccounts.contains { existing in
-                    existing.bankName == bankName &&
-                    existing.branchNumber == branchNumber &&
-                    existing.accountNumber == accountNumber &&
-                    !branchNumber.isEmpty && !accountNumber.isEmpty
-                }
-
-                if isDuplicate {
-                    errors.append("行\(index + 2): 重複する口座です")
-                    errorCount += 1
-                    continue
-                }
-
-                // Get next sort order
-                let allAccounts = try modelContext.fetch(FetchDescriptor<BankAccount>())
-                let maxOrder = allAccounts.map(\.sortOrder).max() ?? -1
-
-                // Create account
-                let account = BankAccount(
-                    bankName: bankName,
-                    branchName: branchName,
-                    branchNumber: branchNumber,
-                    accountNumber: accountNumber,
-                    sortOrder: maxOrder + successCount + 1
-                )
-
-                // Add tags
-                if !tagNames.isEmpty {
-                    let tagList = tagNames.components(separatedBy: ";")
-                    for tagName in tagList {
-                        let trimmedName = tagName.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !trimmedName.isEmpty, let tag = tagDict[trimmedName] {
-                            account.addTag(tag, in: modelContext)
-                        }
-                    }
-                }
-
-                modelContext.insert(account)
-                successCount += 1
-
-            } catch {
-                errors.append("行\(index + 2): \(error.localizedDescription)")
-                errorCount += 1
-            }
+        guard fields.count >= 4 else {
+            throw CSVError.invalidRowFormat
         }
 
-        if successCount > 0 {
-            try modelContext.save()
-        }
+        let bankName = fields[0].trimmingCharacters(in: .whitespacesAndNewlines)
+        let branchName = fields.count > 1 ? fields[1].trimmingCharacters(in: .whitespacesAndNewlines) : ""
+        let branchNumber = fields.count > 2 ? fields[2].trimmingCharacters(in: .whitespacesAndNewlines) : ""
+        let accountNumber = fields.count > 3 ? fields[3].trimmingCharacters(in: .whitespacesAndNewlines) : ""
+        let tagField = fields.count > 4 ? fields[4] : ""
 
-        return ImportResult(
-            successCount: successCount,
-            errorCount: errorCount,
-            errors: errors
+        let tagNames = tagField
+            .components(separatedBy: ";")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        return CSVAccountFields(
+            bankName: bankName,
+            branchName: branchName,
+            branchNumber: branchNumber,
+            accountNumber: accountNumber,
+            tags: tagNames
         )
     }
 
-    // MARK: - Helper Methods
+    private func validateDuplicateAccount(_ data: CSVAccountFields, within accounts: [BankAccount]) throws {
+        guard !data.branchNumber.isEmpty, !data.accountNumber.isEmpty else { return }
+
+        let exists = accounts.contains { account in
+            account.bankName == data.bankName &&
+            account.branchNumber == data.branchNumber &&
+            account.accountNumber == data.accountNumber
+        }
+
+        if exists {
+            throw CSVError.duplicateAccount
+        }
+    }
+
+    private func assignTags(_ names: [String], to account: BankAccount, using lookup: [String: Tag]) {
+        for name in names {
+            if let tag = lookup[name] {
+                account.addTag(tag, in: modelContext)
+            }
+        }
+    }
 
     private func escapeCSVField(_ field: String) -> String {
         if field.contains(",") || field.contains("\"") || field.contains("\n") {
@@ -166,18 +179,18 @@ class CSVService {
         var fields: [String] = []
         var currentField = ""
         var insideQuotes = false
-        var i = line.startIndex
+        var index = line.startIndex
 
-        while i < line.endIndex {
-            let char = line[i]
+        while index < line.endIndex {
+            let character = line[index]
 
-            if char == "\"" {
+            if character == "\"" {
                 if insideQuotes {
-                    let nextIndex = line.index(after: i)
+                    let nextIndex = line.index(after: index)
                     if nextIndex < line.endIndex && line[nextIndex] == "\"" {
                         // Escaped quote
                         currentField += "\""
-                        i = line.index(after: nextIndex)
+                        index = line.index(after: nextIndex)
                         continue
                     } else {
                         // End quote
@@ -187,14 +200,14 @@ class CSVService {
                     // Start quote
                     insideQuotes = true
                 }
-            } else if char == "," && !insideQuotes {
+            } else if character == "," && !insideQuotes {
                 fields.append(currentField)
                 currentField = ""
             } else {
-                currentField += String(char)
+                currentField += String(character)
             }
 
-            i = line.index(after: i)
+            index = line.index(after: index)
         }
 
         fields.append(currentField)
@@ -211,6 +224,35 @@ class CSVService {
 }
 
 // MARK: - Supporting Types
+
+private struct CSVAccountFields {
+    let bankName: String
+    let branchName: String
+    let branchNumber: String
+    let accountNumber: String
+    let tags: [String]
+}
+
+private struct ImportAccumulator {
+    private(set) var successCount = 0
+    private(set) var errors: [String] = []
+
+    mutating func recordSuccess() {
+        successCount += 1
+    }
+
+    mutating func recordError(_ message: String) {
+        errors.append(message)
+    }
+
+    func buildResult() -> ImportResult {
+        ImportResult(
+            successCount: successCount,
+            errorCount: errors.count,
+            errors: errors
+        )
+    }
+}
 
 struct ImportResult {
     let successCount: Int
@@ -235,6 +277,7 @@ enum CSVError: Error, LocalizedError {
     case invalidFormat
     case invalidRowFormat
     case writeError
+    case duplicateAccount
 
     var errorDescription: String? {
         switch self {
@@ -246,6 +289,8 @@ enum CSVError: Error, LocalizedError {
             return "行の形式が正しくありません"
         case .writeError:
             return "ファイルの書き込みに失敗しました"
+        case .duplicateAccount:
+            return "重複する口座です"
         }
     }
 }
