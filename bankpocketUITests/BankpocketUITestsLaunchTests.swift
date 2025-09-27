@@ -7,9 +7,9 @@
 
 import XCTest
 
-final class bankpocketUITestsLaunchTests: XCTestCase {
+final class BankpocketUITestsLaunchTests: XCTestCase {
 
-    override class var runsForEachTargetApplicationUIConfiguration: Bool {
+    override static var runsForEachTargetApplicationUIConfiguration: Bool {
         true
     }
 
