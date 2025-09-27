@@ -81,6 +81,8 @@ struct AccountFormView: View {
                                             .foregroundColor(.blue)
                                     }
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
