@@ -18,7 +18,7 @@ struct PreviewHelper {
         let schema = Schema([
             BankAccount.self,
             Tag.self,
-            AccountTagAssignment.self,
+            AccountTagAssignment.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
 

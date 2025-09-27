@@ -96,9 +96,12 @@ struct TagManagementView: View {
         }
     }
 
-    // MARK: - View Components
+}
 
-    private var statisticsSection: some View {
+// MARK: - View Components
+
+private extension TagManagementView {
+    var statisticsSection: some View {
         HStack(spacing: 16) {
             StatisticCard(
                 title: "総タグ数",
@@ -124,7 +127,7 @@ struct TagManagementView: View {
         .padding()
     }
 
-    private var searchSection: some View {
+    var searchSection: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.secondary)
@@ -142,7 +145,7 @@ struct TagManagementView: View {
         .padding(.horizontal)
     }
 
-    private var tagListSection: some View {
+    var tagListSection: some View {
         List {
             ForEach(filteredTags, id: \.id) { tag in
                 TagRowView(tag: tag, accountCount: tag.accountCount) {
@@ -162,7 +165,7 @@ struct TagManagementView: View {
         .listStyle(PlainListStyle())
     }
 
-    private var emptyStateView: some View {
+    var emptyStateView: some View {
         VStack(spacing: 20) {
             Image(systemName: "tag")
                 .font(.system(size: 60))
@@ -192,10 +195,12 @@ struct TagManagementView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+}
 
-    // MARK: - Computed Properties
+// MARK: - Computed Properties
 
-    private var filteredTags: [Tag] {
+private extension TagManagementView {
+    var filteredTags: [Tag] {
         let filtered = searchText.isEmpty ? tags : tags.filter { tag in
             tag.name.localizedCaseInsensitiveContains(searchText)
         }
@@ -210,21 +215,22 @@ struct TagManagementView: View {
         }
     }
 
-    private var usedTags: [Tag] {
+    var usedTags: [Tag] {
         tags.filter { !$0.accounts.isEmpty }
     }
 
-    private var unusedTags: [Tag] {
+    var unusedTags: [Tag] {
         tags.filter { $0.accounts.isEmpty }
     }
+}
 
-    // MARK: - Actions
+// MARK: - Actions
 
-    private func createDefaultTags() {
+private extension TagManagementView {
+    func createDefaultTags() {
         do {
             var nextSortOrder = (tags.map(\.sortOrder).max() ?? -1) + 1
             for (name, color) in Tag.defaultTags {
-                // Check if tag already exists
                 let exists = tags.contains { $0.name == name }
                 if !exists {
                     let tag = Tag(name: name, color: color, sortOrder: nextSortOrder)
@@ -239,7 +245,7 @@ struct TagManagementView: View {
         }
     }
 
-    private func deleteUnusedTags() {
+    func deleteUnusedTags() {
         do {
             for tag in unusedTags {
                 modelContext.delete(tag)
@@ -251,7 +257,7 @@ struct TagManagementView: View {
         }
     }
 
-    private func deleteTag(_ tag: Tag) {
+    func deleteTag(_ tag: Tag) {
         withAnimation {
             modelContext.delete(tag)
             try? modelContext.save()
@@ -259,7 +265,7 @@ struct TagManagementView: View {
     }
 
     @MainActor
-    private func moveTags(from source: IndexSet, to destination: Int) {
+    func moveTags(from source: IndexSet, to destination: Int) {
         guard searchText.isEmpty else { return }
 
         var reorderedTags = filteredTags
@@ -278,7 +284,7 @@ struct TagManagementView: View {
     }
 
     @MainActor
-    private func normalizeTagSortOrdersIfNeeded() async {
+    func normalizeTagSortOrdersIfNeeded() async {
         guard !didNormalizeSortOrder else { return }
 
         let sortOrders = tags.map(\.sortOrder)

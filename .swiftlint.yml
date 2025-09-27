@@ -2,12 +2,12 @@
 
 # Paths to include during linting
 included:
-  - ios/BankPocket
-  - ios/BankPocketTests
+  - bankpocket
+  - bankpocketTests
+  - bankpocketUITests
 
 # Paths to ignore during linting
 excluded:
-  - ios/BankPocket/Resources/*.xcdatamodeld
   - Carthage
   - Pods
   - .build
@@ -16,7 +16,6 @@ excluded:
 # Binary rules can set their severity level
 force_cast: warning
 force_try: warning
-line_length: 120
 type_body_length: 300
 file_length: 500
 
@@ -81,9 +80,6 @@ nesting:
   type_level:
     warning: 2
     error: 3
-  statement_level:
-    warning: 5
-    error: 10
 
 # Reporter type (xcode, json, csv, checkstyle, junit, html, emoji, sonarqube, markdown, github-actions-logging)
 reporter: "xcode"

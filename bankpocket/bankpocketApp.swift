@@ -14,7 +14,7 @@ struct BankPocketApp: App {
         let schema = Schema([
             BankAccount.self,
             Tag.self,
-            AccountTagAssignment.self,
+            AccountTagAssignment.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

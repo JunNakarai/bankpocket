@@ -45,7 +45,7 @@ struct AccountFormView: View {
                     TextField("支店番号（任意・3桁）", text: $branchNumber)
                         .textContentType(.none)
                         .keyboardType(.numberPad)
-                        .onChange(of: branchNumber) { oldValue, newValue in
+                        .onChange(of: branchNumber) { _, newValue in
                             if newValue.count > 3 {
                                 branchNumber = String(newValue.prefix(3))
                             }
@@ -54,7 +54,7 @@ struct AccountFormView: View {
                     TextField("口座番号（任意・7桁）", text: $accountNumber)
                         .textContentType(.none)
                         .keyboardType(.numberPad)
-                        .onChange(of: accountNumber) { oldValue, newValue in
+                        .onChange(of: accountNumber) { _, newValue in
                             if newValue.count > 7 {
                                 accountNumber = String(newValue.prefix(7))
                             }
