@@ -20,8 +20,8 @@ struct AccountListView: View {
 
     @Binding var showingAddAccount: Bool
     @Binding var showingImportExport: Bool
+    @Binding var searchText: String
 
-    @State private var searchText = ""
     @State private var selectedTag: Tag?
     @State private var showingAccountDetail = false
     @State private var selectedAccount: BankAccount?
@@ -35,7 +35,7 @@ struct AccountListView: View {
 
     var body: some View {
         VStack {
-            // Search and Filter Section
+            // Filter Section
             searchAndFilterSection
 
             // Account List
@@ -92,23 +92,6 @@ struct AccountListView: View {
 
     private var searchAndFilterSection: some View {
         VStack(spacing: 12) {
-            // Search Bar
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-                TextField("銀行名または支店名で検索", text: $searchText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-
-                if !searchText.isEmpty {
-                    Button("クリア") {
-                        searchText = ""
-                    }
-                    .font(.caption)
-                    .foregroundColor(.blue)
-                }
-            }
-
-            // Tag Filter
             if !tags.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
@@ -131,7 +114,8 @@ struct AccountListView: View {
                 }
             }
         }
-        .padding()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 
     private var accountListSection: some View {
@@ -162,15 +146,22 @@ struct AccountListView: View {
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("右上の + ボタンから\n最初の口座を追加してください")
+            Text("右下の + ボタンから\n最初の口座を追加してください")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
 
-            Button("口座を追加") {
-                showingAddAccount = true
+            if #available(iOS 26, *) {
+                Button("口座を追加") {
+                    showingAddAccount = true
+                }
+                .buttonStyle(.glassProminent)
+            } else {
+                Button("口座を追加") {
+                    showingAddAccount = true
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -213,6 +204,7 @@ struct AccountListView: View {
             try? modelContext.save()
         }
     }
+
 
     // MARK: - Import/Export Actions
 
@@ -359,7 +351,8 @@ struct FilterButtonStyle: ButtonStyle {
 #Preview {
     AccountListView(
         showingAddAccount: .constant(false),
-        showingImportExport: .constant(false)
+        showingImportExport: .constant(false),
+        searchText: .constant("")
     )
-.modelContainer(for: [BankAccount.self, Tag.self, AccountTagAssignment.self], inMemory: true)
+    .modelContainer(for: [BankAccount.self, Tag.self, AccountTagAssignment.self], inMemory: true)
 }

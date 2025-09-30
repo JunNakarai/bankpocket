@@ -175,7 +175,7 @@ private extension TagManagementView {
                 .font(.headline)
                 .foregroundColor(.secondary)
 
-            Text("右上の + ボタンから\n最初のタグを作成してください")
+            Text("右下の + ボタンから\n最初のタグを作成してください")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
