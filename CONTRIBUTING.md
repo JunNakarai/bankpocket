@@ -40,7 +40,7 @@
 xcodebuild test \
   -project bankpocket.xcodeproj \
   -scheme bankpocket \
-  -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'
+  -destination 'platform=iOS Simulator,name=iPhone 16,OS=26.0'
 ```
 
 ## コミットとレビュープロセス

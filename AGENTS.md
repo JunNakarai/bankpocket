@@ -8,7 +8,7 @@ SwiftUIアプリケーションのソースは`bankpocket/`にあり、エント
 
 ## ビルド・テスト・開発コマンド
 
-日常開発には`xed bankpocket.xcodeproj`でXcodeプロジェクトを開いてください。プッシュ前にはヘッドレスでビルドを検証します：`xcodebuild build -project bankpocket.xcodeproj -scheme bankpocket -destination 'generic/platform=iOS'`。テストは`xcodebuild test -project bankpocket.xcodeproj -scheme bankpocket -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.6'`で全マトリクスを実行します。CSVインポート/エクスポート検証時は、SwiftDataコンテナが期待通りにシードされるようスキーム固有の設定を使ってください。
+日常開発には`xed bankpocket.xcodeproj`でXcodeプロジェクトを開いてください。プッシュ前にはヘッドレスでビルドを検証します：`xcodebuild build -project bankpocket.xcodeproj -scheme bankpocket -destination 'generic/platform=iOS'`。テストは`xcodebuild test -project bankpocket.xcodeproj -scheme bankpocket -destination 'platform=iOS Simulator,name=iPhone 16,OS=26.0'`で全マトリクスを実行します。CSVインポート/エクスポート検証時は、SwiftDataコンテナが期待通りにシードされるようスキーム固有の設定を使ってください。
 
 ## コーディングスタイルと命名規則
 
